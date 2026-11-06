@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4ecdf" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1714" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Finder 1X2 per Carmela. Inserisci i risultati delle sei partite e leggi i conteggi di 1, X e 2 per posizione.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Finder 1X2">
+  <meta name="format-detection" content="telephone=no">
+  <title>Finder 1X2 · Carmela</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%239c4322'/%3E%3Ccircle cx='20' cy='24' r='4' fill='%23fff8f4'/%3E%3Ccircle cx='32' cy='24' r='4' fill='%23fff8f4'/%3E%3Ccircle cx='44' cy='24' r='4' fill='%23fff8f4'/%3E%3Ccircle cx='20' cy='42' r='4' fill='%23fff8f4'/%3E%3Ccircle cx='32' cy='42' r='4' fill='%23fff8f4'/%3E%3Ccircle cx='44' cy='42' r='4' fill='%23fff8f4'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #f4ecdf;
+      --wash: #f7d9c6;
+      --surface: #fffaf4;
+      --ink: #2c241b;
+      --muted: #5e5043;
+      --line: #eadccb;
+      --accent: #9c4322;
+      --accent-ink: #fff8f4;
+      --accent-soft: #f8e3d6;
+      --olive: #2f6a45;
+      --sign1: #1d6a43;
+      --sign1-bg: #e4f3ea;
+      --signX: #8a5b10;
+      --signX-bg: #f8efd4;
+      --sign2: #9a341f;
+      --sign2-bg: #fde7e1;
+      --danger: #8d2e27;
+      --danger-bg: #f8e4e1;
+      --danger-fill: #8d2e27;
+      --danger-fill-ink: #fff8f6;
+      --shadow: 0 10px 28px rgba(78, 48, 24, 0.08);
+      --nav: rgba(255, 250, 244, 0.94);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1b1714;
+        --wash: #3a2820;
+        --surface: #28221c;
+        --ink: #f6efe6;
+        --muted: #cbbba8;
+        --line: #43392f;
+        --accent: #e08a62;
+        --accent-ink: #2a140d;
+        --accent-soft: #3c2b24;
+        --olive: #9dceb4;
+        --sign1: #b7e4c7;
+        --sign1-bg: #1a3b2b;
+        --signX: #f0d48a;
+        --signX-bg: #3d3116;
+        --sign2: #f3b2a4;
+        --sign2-bg: #3e221c;
+        --danger: #f0b4ae;
+        --danger-bg: #3e2422;
+        --danger-fill: #a33b32;
+        --danger-fill-ink: #fff8f6;
+        --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        --nav: rgba(27, 23, 20, 0.94);
+        color-scheme: dark;
+      }
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+      scroll-padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    }
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 0% -10%, var(--wash), transparent 55%),
+        var(--bg);
+      font-family: var(--font);
+      line-height: 1.4;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+    body.modal-open { overflow: hidden; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button, input, select, textarea, .match, .banner, .day-card {
+      scroll-margin-bottom: calc(120px + env(safe-area-inset-bottom));
+      scroll-margin-top: 12px;
+    }
+    button { cursor: pointer; touch-action: manipulation; }
+    input, select, textarea { touch-action: manipulation; }
+    h1, h2, h3, p { margin: 0; }
+    h1 {
+      font-family: var(--display);
+      font-size: 2.05rem;
+      line-height: 0.95;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    h2 {
+      font-family: var(--display);
+      font-size: 1.45rem;
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    h3 { font-size: 1.05rem; line-height: 1.2; }
+    :focus-visible { outline: 3px solid var(--olive); outline-offset: 2px; }
+    .skip {
+      position: absolute;
+      left: 12px;
+      top: -48px;
+      background: var(--surface);
+      color: var(--ink);
+      padding: 10px 14px;
+      border-radius: 10px;
+      z-index: 40;
+    }
+    .skip:focus { top: calc(8px + env(safe-area-inset-top)); }
+    .app { width: min(720px, 100%); margin: 0 auto; }
+    .header { padding: calc(18px + env(safe-area-inset-top)) 16px 8px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .mark { width: 52px; height: 52px; flex: none; }
+    .eyebrow { color: var(--accent); font-weight: 800; font-size: 0.92rem; }
+    .lead { margin-top: 14px; font-size: 1.05rem; line-height: 1.45; }
+    .banner {
+      margin: 8px 16px 4px;
+      padding: 14px;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .banner.ok { background: var(--sign1-bg); border-color: var(--sign1); }
+    .banner.warn { background: var(--signX-bg); border-color: var(--signX); }
+    .banner.err { background: var(--sign2-bg); border-color: var(--sign2); }
+    .banner-title { font-weight: 800; font-size: 1.05rem; }
+    .banner-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .banner-actions button {
+      flex: 1 1 140px;
+      min-height: 48px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 700;
+      padding: 8px 12px;
+    }
+    .panel { padding: 12px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
+    .help { color: var(--muted); line-height: 1.45; }
+    .hint { color: var(--muted); font-size: 0.95rem; }
+    fieldset { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+    legend { padding: 0; margin-bottom: 8px; font-weight: 750; }
+    .segment { display: flex; gap: 4px; padding: 4px; border-radius: 16px; background: var(--line); }
+    .segment button {
+      flex: 1;
+      min-height: 48px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--ink);
+      font-weight: 750;
+    }
+    .segment button[aria-pressed="true"] { background: var(--surface); box-shadow: var(--shadow); }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field span, .goal-name { font-weight: 750; }
+    input[type="text"], select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 14px;
+      font-size: 16px;
+    }
+    #ordinal {
+      min-height: 56px;
+      font-size: 1.35rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      padding: 8px 12px;
+    }
+    #ordinal[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-bg); }
+    select {
+      min-height: 52px;
+      padding: 0 40px 0 14px;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%235e5043' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+    @media (prefers-color-scheme: dark) {
+      select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23cbbba8' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+      }
+    }
+    #matches { display: flex; flex-direction: column; gap: 12px; }
+    .match {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }
+    .match[data-invalid="true"] { border-color: var(--danger); }
+    .match-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .match-head button {
+      min-height: 44px;
+      padding: 8px 10px;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-weight: 750;
+    }
+    .score-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: end; margin-top: 8px; }
+    .goal { display: flex; flex-direction: column; gap: 6px; }
+    .goal-name { color: var(--muted); font-size: 0.92rem; }
+    .goal input {
+      min-height: 56px;
+      font-size: 1.5rem;
+      text-align: center;
+      padding: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .dash { padding-bottom: 14px; color: var(--muted); font-size: 1.4rem; }
+    .derived {
+      margin-top: 10px;
+      min-height: 64px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .caption { min-height: 1.3em; text-align: center; color: var(--muted); margin-top: 6px; }
+    .match[data-sign="1"] .derived { background: var(--sign1-bg); color: var(--sign1); }
+    .match[data-sign="X"] .derived { background: var(--signX-bg); color: var(--signX); }
+    .match[data-sign="2"] .derived { background: var(--sign2-bg); color: var(--sign2); }
+    .match[data-sign="1"] .caption { color: var(--sign1); }
+    .match[data-sign="X"] .caption { color: var(--signX); }
+    .match[data-sign="2"] .caption { color: var(--sign2); }
+    .sign-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+    .sign-choices button {
+      min-height: 72px;
+      border-radius: 14px;
+      border: 2px solid var(--line);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 4px;
+    }
+    .pick-sym { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+    .pick-sub { font-size: 0.75rem; color: var(--muted); }
+    .sign-choices button[aria-pressed="true"][data-pick="1"] { background: var(--sign1-bg); border-color: var(--sign1); color: var(--sign1); }
+    .sign-choices button[aria-pressed="true"][data-pick="X"] { background: var(--signX-bg); border-color: var(--signX); color: var(--signX); }
+    .sign-choices button[aria-pressed="true"][data-pick="2"] { background: var(--sign2-bg); border-color: var(--sign2); color: var(--sign2); }
+    .sign-choices button[aria-pressed="true"] .pick-sub { color: inherit; }
+    .editing-note {
+      background: var(--accent-soft);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+    .actions, .stack { display: flex; flex-direction: column; gap: 8px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 56px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      font-weight: 750;
+      text-align: center;
+    }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); }
+    .btn.secondary { background: var(--surface); color: var(--ink); border-color: var(--line); }
+    .btn.danger { background: var(--danger-fill); color: var(--danger-fill-ink); }
+    .btn:disabled { opacity: 0.45; }
+    .file-btn { margin-top: 2px; }
+    .visually-file {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .callout { border-radius: 14px; padding: 12px 14px; background: var(--signX-bg); }
+    .preview {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-wrap: anywhere;
+    }
+    .problems { margin: 0; padding-left: 1.15rem; }
+    .problems li + li { margin-top: 4px; }
+    textarea.export-box {
+      min-height: 180px;
+      padding: 12px;
+      resize: vertical;
+      line-height: 1.35;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.86em;
+      background: var(--bg);
+      padding: 0.1em 0.35em;
+      border-radius: 6px;
+    }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 0; margin: 0; list-style: none; color: var(--muted); }
+    .legend li { display: flex; align-items: center; gap: 6px; }
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+    .swatch.s1 { background: var(--sign1-bg); color: var(--sign1); }
+    .swatch.sx { background: var(--signX-bg); color: var(--signX); }
+    .swatch.s2 { background: var(--sign2-bg); color: var(--sign2); }
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    caption {
+      caption-side: bottom;
+      text-align: left;
+      padding: 10px 12px 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    th, td { padding: 12px 8px; text-align: center; font-variant-numeric: tabular-nums; }
+    thead th { font-size: 0.98rem; border-bottom: 1px solid var(--line); }
+    tbody th { text-align: left; padding-left: 12px; }
+    tbody tr + tr th, tbody tr + tr td { border-top: 1px solid var(--line); }
+    thead th:nth-child(2) { color: var(--sign1); }
+    thead th:nth-child(3) { color: var(--signX); }
+    thead th:nth-child(4) { color: var(--sign2); }
+    td.num, td.tot { font-size: 1.15rem; font-weight: 700; }
+    td.tot { font-weight: 800; }
+    .footnote { color: var(--muted); }
+    #history-list { display: flex; flex-direction: column; gap: 12px; }
+    .day-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .when { color: var(--muted); font-size: 0.92rem; margin-top: 2px; }
+    .signs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+    .sign-tile {
+      border-radius: 12px;
+      min-height: 68px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .sign-tile .pos { font-size: 11px; color: var(--muted); font-weight: 750; }
+    .sign-tile .sym { font-size: 1.3rem; font-weight: 800; line-height: 1.1; }
+    .sign-tile .sc { font-size: 11px; color: var(--muted); max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+    .sign-tile[data-sign="1"] { background: var(--sign1-bg); color: var(--sign1); }
+    .sign-tile[data-sign="X"] { background: var(--signX-bg); color: var(--signX); }
+    .sign-tile[data-sign="2"] { background: var(--sign2-bg); color: var(--sign2); }
+    .card-actions { display: flex; gap: 8px; }
+    .card-actions button {
+      flex: 1;
+      min-height: 48px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      font-weight: 750;
+    }
+    .card-actions .danger-button { color: var(--danger); background: var(--danger-bg); border-color: transparent; }
+    .nav {
+      position: fixed;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: min(720px, 100%);
+      margin-inline: auto;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+      padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+      background: var(--nav);
+      border-top: 1px solid var(--line);
+    }
+    @supports (backdrop-filter: blur(12px)) {
+      .nav { backdrop-filter: blur(16px); }
+    }
+    .nav button {
+      min-height: 52px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 4px 2px;
+    }
+    .nav button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
+    .nav svg { width: 22px; height: 22px; display: block; }
+    .nav-icon { position: relative; display: flex; }
+    .nav-count {
+      position: absolute;
+      top: -7px;
+      right: -12px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-size: 11px;
+      line-height: 18px;
+      text-align: center;
+      font-weight: 800;
+    }
+    #modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      align-items: end;
+      justify-items: center;
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(42, 33, 24, 0.48); }
+    .modal-card {
+      position: relative;
+      width: min(520px, 100%);
+      max-height: min(80vh, 640px);
+      overflow: auto;
+      background: var(--surface);
+      color: var(--ink);
+      border-radius: 20px;
+      padding: 20px 16px 16px;
+      box-shadow: var(--shadow);
+    }
+    .modal-card h2 { margin-bottom: 8px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-actions .btn { flex: 1; min-height: 52px; }
+    .empty {
+      background: var(--surface);
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      color: var(--muted);
+    }
+    @media (max-width: 359px) {
+      .header, .panel { padding-left: 12px; padding-right: 12px; }
+      .banner { margin-left: 12px; margin-right: 12px; }
+      th, td { padding: 10px 4px; }
+      .signs { gap: 4px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; transition: none !important; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn:active, .nav button:active, .sign-choices button:active { transform: scale(0.98); }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Vai al contenuto</a>
+  <div class="app" id="app">
+    <header class="header">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="16" fill="#9c4322"></rect>
+          <circle cx="20" cy="24" r="4" fill="#fff8f4"></circle>
+          <circle cx="32" cy="24" r="4" fill="#fff8f4"></circle>
+          <circle cx="44" cy="24" r="4" fill="#fff8f4"></circle>
+          <circle cx="20" cy="42" r="4" fill="#fff8f4"></circle>
+          <circle cx="32" cy="42" r="4" fill="#fff8f4"></circle>
+          <circle cx="44" cy="42" r="4" fill="#fff8f4"></circle>
+        </svg>
+        <div>
+          <p class="eyebrow">Per Carmela</p>
+          <h1>Finder 1X2</h1>
+        </div>
+      </div>
+      <p class="lead">Sei partite a giornata. Dai gol esce il segno 1, X o 2. I totali contano solo ciò che salvi, posizione per posizione.</p>
+    </header>
+    <div id="banner" data-banner hidden role="status" aria-live="polite" tabindex="-1"></div>
+    <main id="main">
+      <section id="panel-inserisci" class="panel" role="tabpanel" aria-labelledby="tab-inserisci">
+        <h2 id="form-title" data-form-title>Nuova giornata</h2>
+        <p class="help">Una scheda per numero. Se aggiorni una giornata, i conteggi usano la versione nuova e non la sommano due volte.</p>
+        <p id="editing-note" class="editing-note" data-editing-note hidden></p>
+        <form id="scheda" autocomplete="off">
+          <fieldset>
+            <legend>Come inserisci i risultati</legend>
+            <div class="segment" role="group" aria-label="Modo di inserimento">
+              <button type="button" data-mode-global="score" aria-pressed="true">Con i gol</button>
+              <button type="button" data-mode-global="sign" aria-pressed="false">Solo segno</button>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="ordinal">Numero giornata</label>
+            <input id="ordinal" data-ordinal type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-describedby="ordinal-hint">
+            <p id="ordinal-hint" class="hint">Scrivi il numero della giornata, per esempio 1.</p>
+          </div>
+          <div id="matches" data-matches></div>
+          <div class="actions">
+            <button type="submit" class="btn primary" data-save>Salva giornata</button>
+            <button type="button" class="btn secondary" data-clear-form>Svuota scheda</button>
+            <button type="button" class="btn secondary" data-cancel-edit hidden>Annulla modifica</button>
+          </div>
+        </form>
+      </section>
+      <section id="panel-totali" class="panel" role="tabpanel" aria-labelledby="tab-totali" hidden>
+        <h2>Conteggi</h2>
+        <p class="help">Quante volte è uscito ciascun segno, su ogni posizione. È un conteggio, non una previsione.</p>
+        <div class="field">
+          <label for="through">Istantanea</label>
+          <select id="through" data-through>
+            <option value="all">Tutte le giornate salvate</option>
+          </select>
+        </div>
+        <p id="totals-note" data-totals-note>I conteggi compaiono dopo la prima giornata salvata.</p>
+        <p id="totals-empty" class="empty" data-totals-empty>Nessun conteggio, finché non salvi una giornata.</p>
+        <div id="totals-table-wrap" class="table-wrap" data-totals-table hidden>
+          <table>
+            <caption>Sei posizioni. Le colonne contano i segni 1, X e 2.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Partita</th>
+                <th scope="col">1</th>
+                <th scope="col">X</th>
+                <th scope="col">2</th>
+                <th scope="col">Totale</th>
+              </tr>
+            </thead>
+            <tbody id="totals-body" data-totals-body></tbody>
+          </table>
+        </div>
+        <ul class="legend">
+          <li><span class="swatch s1">1</span> vittoria della casa</li>
+          <li><span class="swatch sx">X</span> pareggio</li>
+          <li><span class="swatch s2">2</span> vittoria dell'ospite</li>
+        </ul>
+        <p class="footnote">Questi numeri descrivono solo le giornate salvate, posizione per posizione.</p>
+      </section>
+      <section id="panel-storico" class="panel" role="tabpanel" aria-labelledby="tab-storico" hidden>
+        <h2>Storico</h2>
+        <p class="help">Ogni giornata mostra i sei segni, dalla partita 1 alla partita 6.</p>
+        <p id="history-empty" class="empty">L'archivio è vuoto. La prima giornata che salvi comparirà qui.</p>
+        <div id="history-list" data-history></div>
+      </section>
+      <section id="panel-copia" class="panel" role="tabpanel" aria-labelledby="tab-copia" hidden>
+        <h2>Copia di sicurezza</h2>
+        <p class="help">Le giornate restano solo in questo browser. Non vanno su un server e non si mescolano con altri Finder. La chiave è <code>carmela.finder1x2.v1</code>.</p>
+        <p id="stored-count" data-stored-count></p>
+        <p id="volatile-box" class="callout" hidden>Questo browser non conserva i dati dopo la chiusura. Scarica il file prima di uscire.</p>
+        <div id="corrupt-box" class="callout" hidden>
+          <p>C'è un testo salvato che non riesco a leggere. Non l'ho cancellato e non lo sovrascrivo.</p>
+          <div class="stack">
+            <button type="button" class="btn secondary" data-download-raw>Scarica il testo illeggibile</button>
+            <button type="button" class="btn danger" data-discard-corrupt>Rimuovi il testo illeggibile</button>
+          </div>
+        </div>
+        <div class="stack">
+          <button type="button" class="btn primary" id="export-btn" data-export>Scarica copia JSON</button>
+          <button type="button" class="btn secondary" id="copy-btn" data-copy>Copia il testo</button>
+          <button type="button" class="btn secondary" id="show-export" data-show-export>Mostra testo</button>
+          <button type="button" class="btn secondary" id="share-btn" data-share hidden>Condividi</button>
+        </div>
+        <textarea id="export-box" class="export-box" readonly hidden aria-label="Testo della copia JSON"></textarea>
+        <h3>Ripristina da file</h3>
+        <p class="help">Il file viene controllato prima di toccare l'archivio. Se non è valido, i dati attuali restano.</p>
+        <label class="btn secondary file-btn" for="import-file">Scegli file JSON</label>
+        <input id="import-file" class="visually-file" data-import type="file" accept="application/json,.json">
+        <div id="import-preview" class="preview" data-import-preview hidden></div>
+        <h3>Svuota questo browser</h3>
+        <p class="help">Se aggiungi la pagina alla schermata Home, iPhone può tenerla separata da Safari. Il file JSON è il modo per non perdere le giornate.</p>
+        <button type="button" class="btn danger" id="clear-all" data-clear>Cancella tutte le giornate</button>
+      </section>
+    </main>
+    <nav class="nav" role="tablist" aria-label="Sezioni">
+      <button type="button" role="tab" id="tab-inserisci" aria-controls="panel-inserisci" aria-selected="true" tabindex="0">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M12 6l4 4"></path></svg>
+        Inserisci
+      </button>
+      <button type="button" role="tab" id="tab-totali" aria-controls="panel-totali" aria-selected="false" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"></path><path d="M4 10h16M4 15h16M10 5v14"></path></svg>
+        Totali
+      </button>
+      <button type="button" role="tab" id="tab-storico" aria-controls="panel-storico" aria-selected="false" tabindex="-1">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"></path><path d="M4 6h.01M4 12h.01M4 18h.01"></path></svg>
+          <span id="history-count" class="nav-count" hidden>0</span>
+        </span>
+        Storico
+      </button>
+      <button type="button" role="tab" id="tab-copia" aria-controls="panel-copia" aria-selected="false" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"></path><path d="M8 10l4 4 4-4"></path><path d="M5 18h14"></path></svg>
+        Copia
+      </button>
+    </nav>
+  </div>
+  <div id="modal" data-modal hidden>
+    <div class="modal-backdrop" data-modal-dismiss></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-body">
+      <h2 id="modal-title"></h2>
+      <p id="modal-body"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" id="modal-cancel" data-modal-cancel>Annulla</button>
+        <button type="button" class="btn danger" id="modal-confirm" data-modal-confirm>Conferma</button>
+      </div>
+    </div>
+  </div>
+  <script>
+(function (root, factory) {
+  "use strict";
+  var api = factory();
+  if (typeof module === "object" && module && module.exports) {
+    module.exports = api;
+  }
+  if (root) root.FinderCore = api;
+})(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : this, function () {
+  "use strict";
+
+  var STORAGE_KEY = "carmela.finder1x2.v1";
+  var APP_ID = "carmela-finder-1x2";
+  var SCHEMA_VERSION = 1;
+  var POSITIONS = Object.freeze([1, 2, 3, 4, 5, 6]);
+  var SIGNS = Object.freeze(["1", "X", "2"]);
+  var MAX_GOALS = 999;
+  var MAX_ORDINAL = 9999;
+  var MAX_GIORNATE = 4000;
+  var MAX_IMPORT_CHARS = 2000000;
+  var MAX_ERRORS = 24;
+
+  var MESSAGES = {
+    not_object: "Il file non contiene un oggetto JSON.",
+    wrong_app: "Questo file non è una copia del Finder 1X2.",
+    wrong_version: "La versione del file non è supportata.",
+    giornate_missing: "Nel file manca l'elenco delle giornate.",
+    too_many: "Il file ha troppe giornate.",
+    too_large: "Il file è troppo grande.",
+    bad_json: "Il file non è un JSON valido.",
+    corrupt_storage: "I dati in questo browser non sono leggibili. Non li ho cancellati.",
+    storage_unavailable: "Questo browser non mette a disposizione la memoria locale.",
+    storage_write_failed: "Il browser ha rifiutato il salvataggio. I dati precedenti restano.",
+    giornata_invalid: "Una giornata del file non è valida.",
+    ordinal_missing: "Scrivi il numero della giornata.",
+    ordinal_invalid: "Il numero della giornata è un intero da 1 a 9999.",
+    ordinal_taken: "La giornata {n} è già salvata. Aprila dallo storico per aggiornarla: così non viene contata due volte.",
+    id_invalid: "Identificativo della giornata non valido.",
+    duplicate_ordinal: "Nel file la giornata {n} compare più di una volta.",
+    duplicate_id: "Nel file due giornate hanno lo stesso identificativo.",
+    saved_at_invalid: "Manca una data di salvataggio valida.",
+    updated_at_invalid: "Manca una data di aggiornamento valida.",
+    exported_at_invalid: "La data di esportazione non è valida.",
+    matches_count: "Ogni giornata deve avere sei partite.",
+    match_invalid: "Una partita non è valida.",
+    position_invalid: "La posizione della partita non è valida.",
+    position_duplicate: "La partita {n} è ripetuta.",
+    position_missing: "Manca la partita {n}.",
+    goals_invalid: "Nella partita {n} i gol sono numeri interi da 0 a 999.",
+    sign_invalid: "Nella partita {n} il segno deve essere 1, X o 2.",
+    sign_mismatch: "Nella partita {n} il segno non corrisponde ai gol.",
+    match_incomplete: "Completa la partita {n}.",
+    not_found: "Giornata non trovata.",
+    clock_invalid: "Data interna non valida.",
+    through_invalid: "Limite giornata non valido."
+  };
+
+  function message(code, vars) {
+    var text = MESSAGES[code] || "Operazione non riuscita.";
+    var n = vars && vars.n;
+    if (text.indexOf("{n}") !== -1) {
+      text = text.replace("{n}", n == null ? "" : String(n));
+    }
+    return text;
+  }
+
+  function err(code, vars) {
+    var error = { code: code, message: message(code, vars || {}) };
+    if (vars && vars.path) error.path = vars.path;
+    if (vars && vars.n != null) error.n = vars.n;
+    return error;
+  }
+
+  function cap(errors) {
+    if (errors.length <= MAX_ERRORS) return errors;
+    return errors.slice(0, MAX_ERRORS);
+  }
+
+  function fail(errors) {
+    return { ok: false, errors: cap(errors) };
+  }
+
+  function isPlainObject(value) {
+    return value != null && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function isGoal(value) {
+    return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= MAX_GOALS;
+  }
+
+  function deriveSign(home, away) {
+    if (!isGoal(home) || !isGoal(away)) return null;
+    if (home > away) return "1";
+    if (home < away) return "2";
+    return "X";
+  }
+
+  function signCaption(sign) {
+    if (sign === "1") return "Vince la squadra di casa";
+    if (sign === "X") return "Pareggio";
+    if (sign === "2") return "Vince la squadra ospite";
+    return "In attesa";
+  }
+
+  function parseGoalInput(value) {
+    if (typeof value === "number") {
+      if (isGoal(value)) return { empty: false, value: value };
+      return { error: "goals_invalid" };
+    }
+    if (typeof value !== "string") return { error: "goals_invalid" };
+    var trimmed = value.trim();
+    if (trimmed === "") return { empty: true };
+    if (!/^\d{1,6}$/.test(trimmed)) return { error: "goals_invalid" };
+    var number = Number(trimmed);
+    if (!isGoal(number)) return { error: "goals_invalid" };
+    return { empty: false, value: number };
+  }
+
+  function parseOrdinalInput(value) {
+    if (typeof value === "number") {
+      if (Number.isInteger(value) && value >= 1 && value <= MAX_ORDINAL) return { value: value };
+      return { error: "ordinal_invalid" };
+    }
+    if (typeof value !== "string") return { error: "ordinal_invalid" };
+    var trimmed = value.trim();
+    if (trimmed === "") return { error: "ordinal_missing" };
+    if (!/^\d{1,6}$/.test(trimmed)) return { error: "ordinal_invalid" };
+    var number = Number(trimmed);
+    if (!Number.isInteger(number) || number < 1 || number > MAX_ORDINAL) return { error: "ordinal_invalid" };
+    return { value: number };
+  }
+
+  function parseSign(value) {
+    if (typeof value !== "string") return null;
+    var sign = value.trim().toUpperCase();
+    if (sign === "1" || sign === "X" || sign === "2") return sign;
+    return null;
+  }
+
+  function isTimestamp(value) {
+    if (typeof value !== "string" || value.length < 10 || value.length > 40) return false;
+    var time = Date.parse(value);
+    return Number.isFinite(time);
+  }
+
+  function isId(value) {
+    return typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,79}$/.test(value);
+  }
+
+  function createId() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+    return "g-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  }
+
+  function emptyDocument() {
+    return freezeDocument({ app: APP_ID, version: SCHEMA_VERSION, giornate: [] });
+  }
+
+  function freezeDocument(document) {
+    document.giornate.forEach(function (giornata) {
+      giornata.matches.forEach(function (match) {
+        Object.freeze(match);
+      });
+      Object.freeze(giornata.matches);
+      Object.freeze(giornata);
+    });
+    Object.freeze(document.giornate);
+    return Object.freeze(document);
+  }
+
+  function goalField(raw, key) {
+    if (!Object.prototype.hasOwnProperty.call(raw, key) || raw[key] == null) return { empty: true };
+    return parseGoalInput(raw[key]);
+  }
+
+  function normalizeMatch(raw) {
+    if (!isPlainObject(raw)) return fail([err("match_invalid")]);
+    var position = raw.position;
+    if (typeof position === "string" && /^\d+$/.test(position.trim())) position = Number(position.trim());
+    if (typeof position !== "number" || !Number.isInteger(position) || position < 1 || position > 6) {
+      return fail([err("position_invalid")]);
+    }
+    var home = goalField(raw, "home");
+    var away = goalField(raw, "away");
+    if (home.error || away.error) return fail([err("goals_invalid", { n: position })]);
+
+    var signMissing = !Object.prototype.hasOwnProperty.call(raw, "sign") || raw.sign == null || (typeof raw.sign === "string" && raw.sign.trim() === "");
+    var sign = null;
+    if (!signMissing) {
+      sign = parseSign(typeof raw.sign === "string" ? raw.sign : "");
+      if (!sign) return fail([err("sign_invalid", { n: position })]);
+    }
+
+    if (!home.empty || !away.empty) {
+      if (home.empty || away.empty) return fail([err("match_incomplete", { n: position })]);
+      var derived = deriveSign(home.value, away.value);
+      if (!signMissing && sign !== derived) return fail([err("sign_mismatch", { n: position })]);
+      return {
+        ok: true,
+        match: { position: position, home: home.value, away: away.value, sign: derived }
+      };
+    }
+
+    if (!sign) return fail([err("match_incomplete", { n: position })]);
+    return {
+      ok: true,
+      match: { position: position, home: null, away: null, sign: sign }
+    };
+  }
+
+  function normalizeGiornata(raw, options) {
+    var settings = options || {};
+    if (!isPlainObject(raw)) return fail([err("giornata_invalid")]);
+    var errors = [];
+    var ordinalParsed = parseOrdinalInput(raw.ordinal);
+    var ordinal = ordinalParsed.value;
+    if (ordinalParsed.error) errors.push(err(ordinalParsed.error, { n: typeof raw.ordinal === "number" ? raw.ordinal : undefined }));
+
+    var id = raw.id;
+    if (settings.requireId) {
+      if (!isId(id)) errors.push(err("id_invalid", { n: ordinal }));
+    } else if (id != null && id !== "" && !isId(id)) {
+      errors.push(err("id_invalid", { n: ordinal }));
+    }
+
+    if (settings.requireTimestamps) {
+      if (!isTimestamp(raw.savedAt)) errors.push(err("saved_at_invalid", { n: ordinal }));
+      if (!isTimestamp(raw.updatedAt)) errors.push(err("updated_at_invalid", { n: ordinal }));
+    } else {
+      if (raw.savedAt != null && raw.savedAt !== "" && !isTimestamp(raw.savedAt)) errors.push(err("saved_at_invalid", { n: ordinal }));
+      if (raw.updatedAt != null && raw.updatedAt !== "" && !isTimestamp(raw.updatedAt)) errors.push(err("updated_at_invalid", { n: ordinal }));
+    }
+
+    if (!Array.isArray(raw.matches) || raw.matches.length !== 6) {
+      errors.push(err("matches_count", { n: ordinal }));
+      return fail(errors);
+    }
+
+    var matches = new Array(6);
+    var seen = Object.create(null);
+    for (var i = 0; i < raw.matches.length; i += 1) {
+      var normalized = normalizeMatch(raw.matches[i]);
+      if (!normalized.ok) {
+        normalized.errors.forEach(function (error) {
+          error.path = "matches[" + i + "]";
+          errors.push(error);
+        });
+        continue;
+      }
+      var match = normalized.match;
+      if (seen[match.position]) errors.push(err("position_duplicate", { n: match.position, path: "matches[" + i + "]" }));
+      seen[match.position] = true;
+      matches[match.position - 1] = match;
+    }
+    for (var position = 1; position <= 6; position += 1) {
+      if (!seen[position]) errors.push(err("position_missing", { n: position }));
+    }
+    if (errors.length) return fail(errors);
+    return {
+      ok: true,
+      giornata: {
+        id: isId(id) ? id : null,
+        ordinal: ordinal,
+        savedAt: isTimestamp(raw.savedAt) ? raw.savedAt : null,
+        updatedAt: isTimestamp(raw.updatedAt) ? raw.updatedAt : null,
+        matches: matches
+      }
+    };
+  }
+
+  function validateDocument(data) {
+    if (!isPlainObject(data)) return fail([err("not_object")]);
+    if (data.app !== APP_ID) return fail([err("wrong_app")]);
+    if (data.version !== SCHEMA_VERSION) return fail([err("wrong_version")]);
+    var errors = [];
+    if (Object.prototype.hasOwnProperty.call(data, "exportedAt") && data.exportedAt != null && !isTimestamp(data.exportedAt)) {
+      errors.push(err("exported_at_invalid"));
+    }
+    if (!Array.isArray(data.giornate)) return fail(errors.concat([err("giornate_missing")]));
+    if (data.giornate.length > MAX_GIORNATE) return fail([err("too_many")]);
+
+    var giornate = [];
+    var ordinals = Object.create(null);
+    var ids = Object.create(null);
+    for (var i = 0; i < data.giornate.length; i += 1) {
+      var normalized = normalizeGiornata(data.giornate[i], { requireId: true, requireTimestamps: true });
+      if (!normalized.ok) {
+        normalized.errors.forEach(function (error) {
+          error.path = "giornate[" + i + "]" + (error.path ? "." + error.path : "");
+          errors.push(error);
+        });
+        continue;
+      }
+      var giornata = normalized.giornata;
+      if (ordinals[giornata.ordinal]) errors.push(err("duplicate_ordinal", { n: giornata.ordinal, path: "giornate[" + i + "]" }));
+      ordinals[giornata.ordinal] = true;
+      if (ids[giornata.id]) errors.push(err("duplicate_id", { path: "giornate[" + i + "]" }));
+      ids[giornata.id] = true;
+      giornate.push(giornata);
+    }
+    if (errors.length) return fail(errors);
+    giornate.sort(function (a, b) { return a.ordinal - b.ordinal; });
+    return { ok: true, document: freezeDocument({ app: APP_ID, version: SCHEMA_VERSION, giornate: giornate }) };
+  }
+
+  function parseImportText(text) {
+    if (typeof text !== "string") return fail([err("bad_json")]);
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    if (text.length > MAX_IMPORT_CHARS) return fail([err("too_large")]);
+    var data;
+    try {
+      data = JSON.parse(text);
+    } catch (error) {
+      return fail([err("bad_json")]);
+    }
+    return validateDocument(data);
+  }
+
+  function upsertGiornata(document, input, nowIso, options) {
+    var settings = options || {};
+    if (!isTimestamp(nowIso)) return fail([err("clock_invalid")]);
+    var base = validateDocument(document);
+    if (!base.ok) return base;
+    var normalized = normalizeGiornata(input, { requireId: false, requireTimestamps: false });
+    if (!normalized.ok) return normalized;
+    var incoming = normalized.giornata;
+    var list = base.document.giornate;
+    var byId = incoming.id ? list.find(function (giornata) { return giornata.id === incoming.id; }) : null;
+    if (settings.mustExist && !byId) return fail([err("not_found")]);
+    var byOrdinal = list.find(function (giornata) { return giornata.ordinal === incoming.ordinal; });
+    if (byOrdinal && (!byId || byOrdinal.id !== byId.id)) {
+      return fail([err("ordinal_taken", { n: incoming.ordinal })]);
+    }
+
+    var stored;
+    var action;
+    if (byId) {
+      action = "updated";
+      stored = {
+        id: byId.id,
+        ordinal: incoming.ordinal,
+        savedAt: settings.preserveTimestamps && incoming.savedAt ? incoming.savedAt : byId.savedAt,
+        updatedAt: settings.preserveTimestamps && incoming.updatedAt ? incoming.updatedAt : nowIso,
+        matches: incoming.matches
+      };
+    } else {
+      action = "created";
+      stored = {
+        id: incoming.id || createId(),
+        ordinal: incoming.ordinal,
+        savedAt: settings.preserveTimestamps && incoming.savedAt ? incoming.savedAt : nowIso,
+        updatedAt: settings.preserveTimestamps && incoming.updatedAt ? incoming.updatedAt : nowIso,
+        matches: incoming.matches
+      };
+    }
+
+    var next = [];
+    var replaced = false;
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].id === stored.id) {
+        next.push(stored);
+        replaced = true;
+      } else {
+        next.push(list[i]);
+      }
+    }
+    if (!replaced) next.push(stored);
+    next.sort(function (a, b) { return a.ordinal - b.ordinal; });
+    return {
+      ok: true,
+      action: action,
+      giornata: stored,
+      document: freezeDocument({ app: APP_ID, version: SCHEMA_VERSION, giornate: next })
+    };
+  }
+
+  function deleteGiornata(document, id) {
+    var base = validateDocument(document);
+    if (!base.ok) return base;
+    if (!isId(id)) return fail([err("id_invalid")]);
+    var found = base.document.giornate.find(function (giornata) { return giornata.id === id; });
+    if (!found) return fail([err("not_found")]);
+    return {
+      ok: true,
+      deleted: found,
+      document: freezeDocument({
+        app: APP_ID,
+        version: SCHEMA_VERSION,
+        giornate: base.document.giornate.filter(function (giornata) { return giornata.id !== id; })
+      })
+    };
+  }
+
+  function cumulative(document, throughOrdinal) {
+    var base = validateDocument(document);
+    if (!base.ok) return base;
+    var through = null;
+    if (throughOrdinal != null && throughOrdinal !== "all") {
+      if (typeof throughOrdinal !== "number" || !Number.isInteger(throughOrdinal)) return fail([err("through_invalid")]);
+      through = throughOrdinal;
+    }
+    var rows = POSITIONS.map(function (position) {
+      return { partita: position, "1": 0, "X": 0, "2": 0, totale: 0 };
+    });
+    var includedOrdinals = [];
+    base.document.giornate.forEach(function (giornata) {
+      if (through != null && giornata.ordinal > through) return;
+      includedOrdinals.push(giornata.ordinal);
+      giornata.matches.forEach(function (match) {
+        var row = rows[match.position - 1];
+        row[match.sign] += 1;
+        row.totale += 1;
+      });
+    });
+    return {
+      ok: true,
+      rows: rows,
+      includedOrdinals: includedOrdinals,
+      includedCount: includedOrdinals.length,
+      throughOrdinal: through
+    };
+  }
+
+  function mergeDocuments(current, incoming, nowIso) {
+    var base = validateDocument(current);
+    if (!base.ok) return base;
+    var extra = validateDocument(incoming);
+    if (!extra.ok) return extra;
+    var document = base.document;
+    var added = [];
+    var skipped = [];
+    for (var i = 0; i < extra.document.giornate.length; i += 1) {
+      var giornata = extra.document.giornate[i];
+      var ordinalTaken = document.giornate.some(function (item) { return item.ordinal === giornata.ordinal; });
+      if (ordinalTaken) {
+        skipped.push(giornata.ordinal);
+        continue;
+      }
+      var idTaken = document.giornate.some(function (item) { return item.id === giornata.id; });
+      var result = upsertGiornata(document, {
+        id: idTaken ? createId() : giornata.id,
+        ordinal: giornata.ordinal,
+        savedAt: giornata.savedAt,
+        updatedAt: giornata.updatedAt,
+        matches: giornata.matches.map(function (match) {
+          return { position: match.position, home: match.home, away: match.away, sign: match.sign };
+        })
+      }, nowIso, { preserveTimestamps: true });
+      if (!result.ok) return result;
+      document = result.document;
+      added.push(giornata.ordinal);
+    }
+    return { ok: true, document: document, added: added, skipped: skipped };
+  }
+
+  function loadFromStorage(storage) {
+    var raw;
+    try {
+      raw = storage.getItem(STORAGE_KEY);
+    } catch (error) {
+      return { ok: false, unavailable: true, errors: [err("storage_unavailable")] };
+    }
+    if (raw == null) return { ok: true, empty: true, document: emptyDocument() };
+    if (typeof raw !== "string") return { ok: false, corrupt: true, raw: String(raw), errors: [err("corrupt_storage")] };
+    var parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      return { ok: false, corrupt: true, raw: raw, errors: [err("corrupt_storage")] };
+    }
+    var validated = validateDocument(parsed);
+    if (!validated.ok) return { ok: false, corrupt: true, raw: raw, errors: validated.errors };
+    return { ok: true, empty: validated.document.giornate.length === 0, document: validated.document };
+  }
+
+  function saveToStorage(storage, document) {
+    var validated = validateDocument(document);
+    if (!validated.ok) return validated;
+    try {
+      storage.setItem(STORAGE_KEY, JSON.stringify(validated.document));
+    } catch (error) {
+      return { ok: false, errors: [err("storage_write_failed")] };
+    }
+    return { ok: true, document: validated.document };
+  }
+
+  function clearStorage(storage) {
+    try {
+      storage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      return { ok: false, errors: [err("storage_write_failed")] };
+    }
+    return { ok: true, document: emptyDocument() };
+  }
+
+  function toExport(document, nowIso) {
+    var validated = validateDocument(document);
+    if (!validated.ok) return validated;
+    if (!isTimestamp(nowIso)) return fail([err("clock_invalid")]);
+    var payload = {
+      app: APP_ID,
+      version: SCHEMA_VERSION,
+      exportedAt: nowIso,
+      giornate: validated.document.giornate
+    };
+    var day = nowIso.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) day = "backup";
+    return {
+      ok: true,
+      filename: "carmela-finder-1x2-" + day + ".json",
+      text: JSON.stringify(payload, null, 2) + "\n",
+      document: validated.document
+    };
+  }
+
+  function suggestNextOrdinal(document) {
+    var base = validateDocument(document);
+    if (!base.ok || base.document.giornate.length === 0) return null;
+    var max = 0;
+    base.document.giornate.forEach(function (giornata) {
+      if (giornata.ordinal > max) max = giornata.ordinal;
+    });
+    if (max >= MAX_ORDINAL) return null;
+    return max + 1;
+  }
+
+  return {
+    STORAGE_KEY: STORAGE_KEY,
+    APP_ID: APP_ID,
+    SCHEMA_VERSION: SCHEMA_VERSION,
+    POSITIONS: POSITIONS,
+    SIGNS: SIGNS,
+    MAX_GOALS: MAX_GOALS,
+    MAX_ORDINAL: MAX_ORDINAL,
+    emptyDocument: emptyDocument,
+    deriveSign: deriveSign,
+    signCaption: signCaption,
+    parseGoalInput: parseGoalInput,
+    parseOrdinalInput: parseOrdinalInput,
+    normalizeMatch: normalizeMatch,
+    normalizeGiornata: normalizeGiornata,
+    validateDocument: validateDocument,
+    parseImportText: parseImportText,
+    upsertGiornata: upsertGiornata,
+    deleteGiornata: deleteGiornata,
+    cumulative: cumulative,
+    mergeDocuments: mergeDocuments,
+    loadFromStorage: loadFromStorage,
+    saveToStorage: saveToStorage,
+    clearStorage: clearStorage,
+    toExport: toExport,
+    suggestNextOrdinal: suggestNextOrdinal,
+    message: message,
+    createId: createId,
+    isId: isId
+  };
+});
+
+  </script>
+  <script>
+  (function () {
+    "use strict";
+    var FC = window.FinderCore;
+    var state = {
+      document: null,
+      corruptRaw: null,
+      volatile: false,
+      editingId: null,
+      through: "all",
+      pendingImport: null,
+      modal: null,
+      lastFocus: null
+    };
+
+    function el(tag, attrs, text) {
+      var node = document.createElement(tag);
+      if (attrs) {
+        Object.keys(attrs).forEach(function (key) {
+          node.setAttribute(key, attrs[key]);
+        });
+      }
+      if (text != null) node.textContent = text;
+      return node;
+    }
+
+    function clearNode(node) {
+      while (node.firstChild) node.removeChild(node.firstChild);
+    }
+
+    function scrollToEl(node) {
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      node.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }
+
+    function formatWhen(iso) {
+      var date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "";
+      try {
+        return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", year: "numeric" }).format(date);
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function uniqueMessages(errors) {
+      var seen = Object.create(null);
+      var list = [];
+      errors.forEach(function (error) {
+        if (!error || seen[error.message]) return;
+        seen[error.message] = true;
+        list.push(error.message);
+      });
+      return list;
+    }
+
+    function mergeMessage(added, skipped) {
+      var text = added.length === 0
+        ? "Nessuna giornata nuova."
+        : added.length === 1
+          ? "Aggiunta 1 giornata."
+          : "Aggiunte " + added.length + " giornate.";
+      if (added.length > 0 && added.length <= 6) text += " Numeri: " + added.join(", ") + ".";
+      if (skipped.length === 1) text += " 1 era già presente e non è stata modificata.";
+      else if (skipped.length > 1) text += " " + skipped.length + " erano già presenti e non sono state modificate.";
+      return text;
+    }
+
+    function previewText(filename, incoming, currentCount) {
+      var giornate = incoming.giornate;
+      var range = "";
+      if (giornate.length) {
+        range = " Numeri da " + giornate[0].ordinal + " a " + giornate[giornate.length - 1].ordinal + ".";
+      }
+      var here = currentCount === 1 ? "1 giornata" : currentCount + " giornate";
+      return "File " + filename + ": " + giornate.length + (giornate.length === 1 ? " giornata." : " giornate.") + range + " In questo browser: " + here + ". Non ho ancora modificato nulla.";
+    }
+
+    function clearBanner() {
+      var banner = document.getElementById("banner");
+      banner.hidden = true;
+      banner.className = "banner";
+      clearNode(banner);
+    }
+
+    function setBanner(options) {
+      var banner = document.getElementById("banner");
+      clearNode(banner);
+      banner.hidden = false;
+      banner.className = "banner " + (options.tone || "ok");
+      if (options.title) banner.appendChild(el("p", { class: "banner-title" }, options.title));
+      if (options.text) banner.appendChild(el("p", { class: "banner-text" }, options.text));
+      var actions = el("div", { class: "banner-actions" });
+      (options.actions || []).forEach(function (action) {
+        var button = el("button", { type: "button", "data-banner-action": action.name || "custom" }, action.label);
+        button.addEventListener("click", action.onClick);
+        actions.appendChild(button);
+      });
+      var close = el("button", { type: "button", "data-banner-action": "close" }, "Chiudi");
+      close.addEventListener("click", clearBanner);
+      actions.appendChild(close);
+      banner.appendChild(actions);
+      if (!options.keepFocus) banner.focus();
+    }
+
+    function downloadText(filename, text, mime) {
+      var blob = new Blob([text], { type: mime || "application/json" });
+      var url = URL.createObjectURL(blob);
+      var link = el("a", { href: url, download: filename, rel: "noopener" });
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    }
+
+    function persist(next) {
+      if (state.corruptRaw != null) {
+        return { ok: false, errors: [{ code: "corrupt_storage", message: FC.message("corrupt_storage") }] };
+      }
+      if (state.volatile) {
+        state.document = next;
+        return { ok: true, volatile: true };
+      }
+      var saved;
+      try {
+        saved = FC.saveToStorage(window.localStorage, next);
+      } catch (error) {
+        return { ok: false, errors: [{ code: "storage_write_failed", message: FC.message("storage_write_failed") }] };
+      }
+      if (!saved.ok) return saved;
+      state.document = saved.document;
+      return { ok: true };
+    }
+
+    function showPanel(name) {
+      state.panel = name;
+      ["inserisci", "totali", "storico", "copia"].forEach(function (id) {
+        var panel = document.getElementById("panel-" + id);
+        var tab = document.getElementById("tab-" + id);
+        var on = id === name;
+        panel.hidden = !on;
+        tab.setAttribute("aria-selected", on ? "true" : "false");
+        tab.tabIndex = on ? 0 : -1;
+      });
+      if (name === "copia") refreshShareButton();
+    }
+
+    function updateDerived(card) {
+      var bar = card.querySelector("[data-derived]");
+      var caption = card.querySelector("[data-caption]");
+      var sign = null;
+      var invalid = false;
+      var waiting = "In attesa dei gol.";
+      if (card.getAttribute("data-mode") === "sign") {
+        var picked = card.querySelector('[data-pick][aria-pressed="true"]');
+        sign = picked ? picked.getAttribute("data-pick") : null;
+        waiting = "Tocca 1, X o 2.";
+      } else {
+        var home = FC.parseGoalInput(card.querySelector("[data-home]").value);
+        var away = FC.parseGoalInput(card.querySelector("[data-away]").value);
+        if (home.error || away.error) invalid = true;
+        else if (!home.empty && !away.empty) sign = FC.deriveSign(home.value, away.value);
+      }
+      card.setAttribute("data-sign", sign || "");
+      bar.setAttribute("data-sign", sign || "");
+      if (invalid) {
+        bar.textContent = "Gol non validi";
+        caption.textContent = "Usa numeri interi da 0 a 999.";
+      } else if (!sign) {
+        bar.textContent = "Segno —";
+        caption.textContent = waiting;
+      } else {
+        bar.textContent = "Segno " + sign;
+        caption.textContent = FC.signCaption(sign);
+      }
+    }
+
+    function setPicked(card, sign) {
+      card.querySelectorAll("[data-pick]").forEach(function (button) {
+        button.setAttribute("aria-pressed", button.getAttribute("data-pick") === sign ? "true" : "false");
+      });
+    }
+
+    function setCardMode(card, mode) {
+      var isSign = mode === "sign";
+      card.setAttribute("data-mode", isSign ? "sign" : "score");
+      card.querySelector("[data-score-fields]").hidden = isSign;
+      card.querySelector("[data-sign-fields]").hidden = !isSign;
+      card.querySelector("[data-match-mode]").textContent = isSign ? "Con i gol" : "Solo segno";
+      if (isSign) {
+        var home = FC.parseGoalInput(card.querySelector("[data-home]").value);
+        var away = FC.parseGoalInput(card.querySelector("[data-away]").value);
+        if (!home.error && !away.error && !home.empty && !away.empty) {
+          setPicked(card, FC.deriveSign(home.value, away.value));
+        }
+      }
+      updateDerived(card);
+    }
+
+    function syncGlobal() {
+      var modes = Array.prototype.map.call(document.querySelectorAll("[data-match]"), function (card) {
+        return card.getAttribute("data-mode");
+      });
+      var allScore = modes.length > 0 && modes.every(function (mode) { return mode === "score"; });
+      var allSign = modes.length > 0 && modes.every(function (mode) { return mode === "sign"; });
+      document.querySelector('[data-mode-global="score"]').setAttribute("aria-pressed", allScore ? "true" : "false");
+      document.querySelector('[data-mode-global="sign"]').setAttribute("aria-pressed", allSign ? "true" : "false");
+    }
+
+    function buildMatches() {
+      var root = document.getElementById("matches");
+      clearNode(root);
+      for (let position = 1; position <= 6; position += 1) {
+        const card = el("article", { class: "match", "data-match": String(position), "data-mode": "score", "data-sign": "" });
+        var head = el("div", { class: "match-head" });
+        head.appendChild(el("h3", null, "Partita " + position));
+        head.appendChild(el("button", { type: "button", "data-match-mode": "" }, "Solo segno"));
+        card.appendChild(head);
+
+        var score = el("div", { class: "score-row", "data-score-fields": "" });
+        var homeLabel = el("label", { class: "goal" });
+        homeLabel.appendChild(el("span", { class: "goal-name" }, "Casa"));
+        homeLabel.appendChild(el("input", {
+          type: "text",
+          inputmode: "numeric",
+          pattern: "[0-9]*",
+          maxlength: "3",
+          "data-home": "",
+          autocomplete: "off",
+          autocapitalize: "off",
+          autocorrect: "off",
+          spellcheck: "false",
+          enterkeyhint: "done",
+          "aria-label": "Gol della casa, partita " + position
+        }));
+        var awayLabel = el("label", { class: "goal" });
+        awayLabel.appendChild(el("span", { class: "goal-name" }, "Ospite"));
+        awayLabel.appendChild(el("input", {
+          type: "text",
+          inputmode: "numeric",
+          pattern: "[0-9]*",
+          maxlength: "3",
+          "data-away": "",
+          autocomplete: "off",
+          autocapitalize: "off",
+          autocorrect: "off",
+          spellcheck: "false",
+          enterkeyhint: "done",
+          "aria-label": "Gol dell'ospite, partita " + position
+        }));
+        score.appendChild(homeLabel);
+        score.appendChild(el("span", { class: "dash", "aria-hidden": "true" }, "–"));
+        score.appendChild(awayLabel);
+        card.appendChild(score);
+        card.appendChild(el("p", { class: "derived", "data-derived": "", "data-sign": "", "aria-live": "polite" }, "Segno —"));
+        card.appendChild(el("p", { class: "caption", "data-caption": "" }, "In attesa dei gol."));
+
+        var signs = el("div", { class: "sign-choices", "data-sign-fields": "" });
+        signs.hidden = true;
+        [
+          ["1", "Casa", "Segno 1, vittoria della casa, partita " + position],
+          ["X", "Pareggio", "Segno X, pareggio, partita " + position],
+          ["2", "Ospite", "Segno 2, vittoria dell'ospite, partita " + position]
+        ].forEach(function (item) {
+          var button = el("button", { type: "button", "data-pick": item[0], "aria-pressed": "false", "aria-label": item[2] });
+          button.appendChild(el("span", { class: "pick-sym" }, item[0]));
+          button.appendChild(el("span", { class: "pick-sub" }, item[1]));
+          signs.appendChild(button);
+        });
+        card.appendChild(signs);
+
+        card.querySelector("[data-match-mode]").addEventListener("click", function () {
+          setCardMode(card, card.getAttribute("data-mode") === "sign" ? "score" : "sign");
+          syncGlobal();
+        });
+        card.querySelector("[data-home]").addEventListener("input", function () {
+          card.removeAttribute("data-invalid");
+          updateDerived(card);
+        });
+        card.querySelector("[data-away]").addEventListener("input", function () {
+          card.removeAttribute("data-invalid");
+          updateDerived(card);
+        });
+        card.querySelectorAll("[data-pick]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            card.removeAttribute("data-invalid");
+            setPicked(card, button.getAttribute("data-pick"));
+            updateDerived(card);
+          });
+        });
+        root.appendChild(card);
+      }
+      syncGlobal();
+    }
+
+    function clearInvalid() {
+      document.getElementById("ordinal").removeAttribute("aria-invalid");
+      document.querySelectorAll("[data-match]").forEach(function (card) {
+        card.removeAttribute("data-invalid");
+      });
+    }
+
+    function clearFields() {
+      var ordinal = document.getElementById("ordinal");
+      ordinal.value = "";
+      ordinal.removeAttribute("aria-invalid");
+      document.querySelectorAll("[data-match]").forEach(function (card) {
+        card.removeAttribute("data-invalid");
+        card.querySelector("[data-home]").value = "";
+        card.querySelector("[data-away]").value = "";
+        setPicked(card, null);
+        updateDerived(card);
+      });
+    }
+
+    function renderFormChrome() {
+      var title = document.getElementById("form-title");
+      var note = document.getElementById("editing-note");
+      var cancel = document.querySelector("[data-cancel-edit]");
+      var save = document.querySelector("[data-save]");
+      var clearButton = document.querySelector("[data-clear-form]");
+      var hint = document.getElementById("ordinal-hint");
+      if (state.editingId) {
+        var current = state.document.giornate.find(function (giornata) { return giornata.id === state.editingId; });
+        var typed = FC.parseOrdinalInput(document.getElementById("ordinal").value);
+        var number = typed.value || (current ? current.ordinal : "");
+        title.textContent = number ? "Modifica giornata " + number : "Modifica giornata";
+        note.hidden = false;
+        note.textContent = "Stai aggiornando una giornata già salvata. Il salvataggio sostituisce quella scheda e i conteggi non la sommano una seconda volta.";
+        cancel.hidden = false;
+        save.textContent = "Aggiorna giornata";
+        clearButton.textContent = "Pulisci i campi";
+        hint.textContent = "Puoi cambiare il numero, se quello nuovo è libero.";
+      } else {
+        title.textContent = "Nuova giornata";
+        note.hidden = true;
+        note.textContent = "";
+        cancel.hidden = true;
+        save.textContent = "Salva giornata";
+        clearButton.textContent = "Svuota scheda";
+        var next = FC.suggestNextOrdinal(state.document);
+        hint.textContent = next
+          ? "Numero libero successivo: " + next + "."
+          : "Scrivi il numero della giornata, per esempio 1.";
+      }
+    }
+
+    function fillForm(giornata) {
+      document.getElementById("ordinal").value = String(giornata.ordinal);
+      giornata.matches.forEach(function (match) {
+        var card = document.querySelector('[data-match="' + match.position + '"]');
+        var home = card.querySelector("[data-home]");
+        var away = card.querySelector("[data-away]");
+        if (match.home == null || match.away == null) {
+          home.value = "";
+          away.value = "";
+          setCardMode(card, "sign");
+          setPicked(card, match.sign);
+        } else {
+          home.value = String(match.home);
+          away.value = String(match.away);
+          setCardMode(card, "score");
+          setPicked(card, null);
+        }
+        updateDerived(card);
+      });
+      syncGlobal();
+    }
+
+    function startEdit(id) {
+      var giornata = state.document.giornate.find(function (item) { return item.id === id; });
+      if (!giornata) return;
+      state.editingId = giornata.id;
+      showPanel("inserisci");
+      fillForm(giornata);
+      renderFormChrome();
+      clearBanner();
+      document.getElementById("ordinal").focus();
+      scrollToEl(document.getElementById("form-title"));
+    }
+
+    function readEntry() {
+      var matches = [];
+      document.querySelectorAll("[data-match]").forEach(function (card) {
+        var position = Number(card.getAttribute("data-match"));
+        if (card.getAttribute("data-mode") === "sign") {
+          var picked = card.querySelector('[data-pick][aria-pressed="true"]');
+          matches.push({
+            position: position,
+            home: null,
+            away: null,
+            sign: picked ? picked.getAttribute("data-pick") : ""
+          });
+        } else {
+          matches.push({
+            position: position,
+            home: card.querySelector("[data-home]").value,
+            away: card.querySelector("[data-away]").value
+          });
+        }
+      });
+      var entry = { ordinal: document.getElementById("ordinal").value, matches: matches };
+      if (state.editingId) entry.id = state.editingId;
+      return entry;
+    }
+
+    function showProblems(errors) {
+      clearInvalid();
+      var focused = false;
+      var matchCodes = {
+        goals_invalid: true,
+        sign_invalid: true,
+        sign_mismatch: true,
+        match_incomplete: true,
+        position_missing: true,
+        position_duplicate: true
+      };
+      errors.forEach(function (error) {
+        if (error.code === "ordinal_missing" || error.code === "ordinal_invalid" || error.code === "ordinal_taken") {
+          var ordinal = document.getElementById("ordinal");
+          ordinal.setAttribute("aria-invalid", "true");
+          if (!focused) {
+            ordinal.focus();
+            focused = true;
+          }
+        }
+        if (matchCodes[error.code] && error.n >= 1 && error.n <= 6) {
+          var card = document.querySelector('[data-match="' + error.n + '"]');
+          if (!card) return;
+          card.setAttribute("data-invalid", "true");
+          if (focused) return;
+          var home = card.querySelector("[data-home]");
+          if (home && !home.closest("[hidden]")) home.focus();
+          else {
+            var pick = card.querySelector("[data-pick]");
+            if (pick) pick.focus();
+          }
+          focused = true;
+        }
+      });
+      var actions = [];
+      var taken = errors.find(function (error) { return error.code === "ordinal_taken"; });
+      if (taken) {
+        actions.push({
+          name: "open-existing",
+          label: "Apri giornata " + taken.n,
+          onClick: function () {
+            var found = state.document.giornate.find(function (giornata) { return giornata.ordinal === taken.n; });
+            if (found) startEdit(found.id);
+          }
+        });
+      }
+      setBanner({
+        tone: "err",
+        title: "Controlla la scheda",
+        text: uniqueMessages(errors).join(" "),
+        actions: actions,
+        keepFocus: focused
+      });
+    }
+
+    function onSave(event) {
+      event.preventDefault();
+      if (state.corruptRaw != null) {
+        showPanel("copia");
+        setBanner({ tone: "warn", title: "Salvataggio fermato", text: "C'è un testo illeggibile in questo browser. Non lo sovrascrivo." });
+        return;
+      }
+      var options = state.editingId ? { mustExist: true } : {};
+      var result = FC.upsertGiornata(state.document, readEntry(), new Date().toISOString(), options);
+      if (!result.ok) {
+        showProblems(result.errors);
+        return;
+      }
+      var saved = persist(result.document);
+      if (!saved.ok) {
+        setBanner({ tone: "err", title: "Non salvata", text: saved.errors[0].message });
+        return;
+      }
+      var ordinal = result.giornata.ordinal;
+      var updated = result.action === "updated";
+      state.editingId = null;
+      clearFields();
+      renderData();
+      var text = updated
+        ? "La giornata " + ordinal + " è aggiornata. I conteggi usano solo questa versione."
+        : "La giornata " + ordinal + " è in archivio. I conteggi la considerano una sola volta.";
+      if (state.volatile) text += " Questo browser non la conserverà dopo la chiusura: scarica una copia.";
+      setBanner({
+        tone: "ok",
+        title: updated ? "Giornata aggiornata" : "Giornata salvata",
+        text: text,
+        actions: [{ name: "totals", label: "Vedi i totali", onClick: function () { showPanel("totali"); } }]
+      });
+    }
+
+    function historyCard(giornata) {
+      var card = el("article", { class: "day-card", "data-giornata": String(giornata.ordinal), "data-id": giornata.id });
+      var head = el("div", { class: "day-head" });
+      head.appendChild(el("h3", null, "Giornata " + giornata.ordinal));
+      var when = "Salvata il " + formatWhen(giornata.savedAt);
+      if (Math.abs(Date.parse(giornata.updatedAt) - Date.parse(giornata.savedAt)) >= 1000) {
+        when += " · aggiornata il " + formatWhen(giornata.updatedAt);
+      }
+      head.appendChild(el("p", { class: "when" }, when));
+      card.appendChild(head);
+      var grid = el("div", { class: "signs" });
+      giornata.matches.forEach(function (match) {
+        var tile = el("div", { class: "sign-tile", "data-sign": match.sign });
+        var score = match.home == null ? "segno" : String(match.home) + "–" + String(match.away);
+        tile.appendChild(el("span", { class: "pos" }, String(match.position)));
+        tile.appendChild(el("span", { class: "sym" }, match.sign));
+        tile.appendChild(el("span", { class: "sc" }, score));
+        tile.setAttribute("aria-label", "Partita " + match.position + ", segno " + match.sign + (match.home == null ? ", senza gol" : ", " + match.home + " a " + match.away));
+        grid.appendChild(tile);
+      });
+      card.appendChild(grid);
+      var actions = el("div", { class: "card-actions" });
+      actions.appendChild(el("button", { type: "button", "data-edit": giornata.id }, "Modifica"));
+      actions.appendChild(el("button", { type: "button", class: "danger-button", "data-delete": giornata.id }, "Elimina"));
+      card.appendChild(actions);
+      return card;
+    }
+
+    function renderHistory() {
+      var list = document.getElementById("history-list");
+      var empty = document.getElementById("history-empty");
+      clearNode(list);
+      var giornate = state.document.giornate.slice().sort(function (a, b) { return b.ordinal - a.ordinal; });
+      empty.hidden = giornate.length !== 0;
+      list.hidden = giornate.length === 0;
+      giornate.forEach(function (giornata) { list.appendChild(historyCard(giornata)); });
+      var badge = document.getElementById("history-count");
+      badge.hidden = giornate.length === 0;
+      badge.textContent = String(giornate.length);
+    }
+
+    function renderThroughOptions() {
+      var select = document.getElementById("through");
+      var ordinals = state.document.giornate.map(function (giornata) { return giornata.ordinal; });
+      var current = state.through === "all" ? "all" : String(state.through);
+      if (current !== "all" && ordinals.indexOf(Number(current)) === -1) {
+        state.through = "all";
+        current = "all";
+      }
+      clearNode(select);
+      select.appendChild(new Option("Tutte le giornate salvate", "all"));
+      ordinals.forEach(function (ordinal) {
+        select.appendChild(new Option("Fino alla giornata " + ordinal + " compresa", String(ordinal)));
+      });
+      select.value = current;
+      select.disabled = ordinals.length === 0;
+    }
+
+    function renderTotals() {
+      renderThroughOptions();
+      var empty = document.getElementById("totals-empty");
+      var wrap = document.getElementById("totals-table-wrap");
+      var note = document.getElementById("totals-note");
+      var body = document.getElementById("totals-body");
+      if (state.document.giornate.length === 0) {
+        empty.hidden = false;
+        wrap.hidden = true;
+        note.textContent = "I conteggi compaiono dopo la prima giornata salvata.";
+        clearNode(body);
+        return;
+      }
+      var result = FC.cumulative(state.document, state.through === "all" ? null : state.through);
+      if (!result.ok) {
+        note.textContent = result.errors[0].message;
+        return;
+      }
+      empty.hidden = true;
+      wrap.hidden = false;
+      if (state.through === "all") {
+        note.textContent = result.includedCount === 1
+          ? "1 giornata contata. Ogni riga è una posizione, dalla prima alla sesta partita."
+          : result.includedCount + " giornate contate. Ogni riga è una posizione, dalla prima alla sesta partita.";
+      } else {
+        note.textContent = "Istantanea fino alla giornata " + state.through + " compresa. Entrano le giornate con numero minore o uguale. Contate: " + result.includedCount + ". Le altre restano in archivio e non entrano in questi numeri.";
+      }
+      clearNode(body);
+      result.rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        var th = document.createElement("th");
+        th.scope = "row";
+        th.textContent = String(row.partita);
+        th.setAttribute("aria-label", "Partita " + row.partita);
+        tr.appendChild(th);
+        ["1", "X", "2", "totale"].forEach(function (key) {
+          var td = document.createElement("td");
+          td.className = key === "totale" ? "tot" : "num";
+          td.textContent = String(row[key]);
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    }
+
+    function renderProblems(errors) {
+      var list = el("ul", { class: "problems" });
+      uniqueMessages(errors).forEach(function (text) {
+        list.appendChild(el("li", null, text));
+      });
+      return list;
+    }
+
+    function clearImportPreview() {
+      var preview = document.getElementById("import-preview");
+      preview.hidden = true;
+      clearNode(preview);
+    }
+
+    function renderStoredCount() {
+      var count = state.document.giornate.length;
+      var text = count === 0
+        ? "In questo browser non ci sono giornate salvate."
+        : count === 1
+          ? "In questo browser c'è 1 giornata salvata."
+          : "In questo browser ci sono " + count + " giornate salvate.";
+      document.getElementById("stored-count").textContent = text;
+      document.getElementById("volatile-box").hidden = !state.volatile;
+      document.getElementById("corrupt-box").hidden = state.corruptRaw == null;
+      var blocked = state.corruptRaw != null;
+      document.getElementById("export-btn").disabled = blocked;
+      document.getElementById("show-export").disabled = blocked;
+      document.getElementById("copy-btn").disabled = blocked;
+      document.getElementById("share-btn").disabled = blocked;
+      document.getElementById("clear-all").disabled = blocked || count === 0;
+    }
+
+    function renderData() {
+      renderFormChrome();
+      renderHistory();
+      renderTotals();
+      renderStoredCount();
+    }
+
+    function currentExport() {
+      return FC.toExport(state.document, new Date().toISOString());
+    }
+
+    function refreshShareButton() {
+      var button = document.getElementById("share-btn");
+      if (state.corruptRaw != null) {
+        button.hidden = true;
+        return;
+      }
+      var exported = currentExport();
+      if (!exported.ok) {
+        button.hidden = true;
+        return;
+      }
+      try {
+        var file = new File([exported.text], exported.filename, { type: "application/json" });
+        button.hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
+      } catch (error) {
+        button.hidden = true;
+      }
+    }
+
+    function showExportText() {
+      var exported = currentExport();
+      if (!exported.ok) {
+        setBanner({ tone: "err", text: exported.errors[0].message });
+        return null;
+      }
+      var box = document.getElementById("export-box");
+      box.hidden = false;
+      box.value = exported.text;
+      return exported;
+    }
+
+    function openModal(options) {
+      state.modal = options;
+      state.lastFocus = document.activeElement;
+      document.getElementById("modal-title").textContent = options.title;
+      document.getElementById("modal-body").textContent = options.body;
+      var confirm = document.getElementById("modal-confirm");
+      confirm.textContent = options.confirmLabel || "Conferma";
+      confirm.className = options.danger ? "btn danger" : "btn primary";
+      document.getElementById("modal").hidden = false;
+      document.body.classList.add("modal-open");
+      document.getElementById("app").setAttribute("inert", "");
+      document.getElementById("modal-cancel").focus();
+    }
+
+    function closeModal(confirmed) {
+      var options = state.modal;
+      document.getElementById("modal").hidden = true;
+      document.body.classList.remove("modal-open");
+      document.getElementById("app").removeAttribute("inert");
+      state.modal = null;
+      if (confirmed && options && options.onConfirm) options.onConfirm();
+      if (state.lastFocus && state.lastFocus.focus && document.contains(state.lastFocus)) state.lastFocus.focus();
+    }
+
+    function askDelete(id) {
+      var giornata = state.document.giornate.find(function (item) { return item.id === id; });
+      if (!giornata) return;
+      openModal({
+        title: "Eliminare la giornata " + giornata.ordinal + "?",
+        body: "I sei segni usciranno dai conteggi. Da qui non si annulla: puoi reinserirli oppure ripristinare una copia JSON.",
+        confirmLabel: "Elimina giornata",
+        danger: true,
+        onConfirm: function () {
+          var result = FC.deleteGiornata(state.document, id);
+          if (!result.ok) {
+            setBanner({ tone: "err", text: result.errors[0].message });
+            return;
+          }
+          var saved = persist(result.document);
+          if (!saved.ok) {
+            setBanner({ tone: "err", title: "Non eliminata", text: saved.errors[0].message });
+            return;
+          }
+          if (state.editingId === id) {
+            state.editingId = null;
+            clearFields();
+          }
+          if (state.through === giornata.ordinal) state.through = "all";
+          renderData();
+          setBanner({
+            tone: "ok",
+            title: "Giornata eliminata",
+            text: "La giornata " + giornata.ordinal + " non è più nell'archivio. I conteggi sono stati ricalcolati."
+          });
+        }
+      });
+    }
+
+    function askClearAll() {
+      var count = state.document.giornate.length;
+      if (!count) return;
+      openModal({
+        title: count === 1 ? "Cancellare 1 giornata?" : "Cancellare " + count + " giornate?",
+        body: "Escono da questo browser. Scarica prima una copia JSON se vuoi rimetterle.",
+        confirmLabel: "Cancella tutto",
+        danger: true,
+        onConfirm: function () {
+          if (state.volatile) {
+            state.document = FC.emptyDocument();
+          } else {
+            var cleared = FC.clearStorage(window.localStorage);
+            if (!cleared.ok) {
+              setBanner({ tone: "err", text: cleared.errors[0].message });
+              return;
+            }
+            state.document = cleared.document;
+          }
+          state.editingId = null;
+          state.through = "all";
+          state.pendingImport = null;
+          clearFields();
+          clearImportPreview();
+          renderData();
+          setBanner({ tone: "ok", title: "Archivio vuoto", text: "Le giornate sono state cancellate da questo browser." });
+        }
+      });
+    }
+
+    function askDiscardCorrupt() {
+      openModal({
+        title: "Rimuovere il testo illeggibile?",
+        body: "Il testo resta finché non confermi. Scaricalo prima, se non l'hai già fatto. Dopo la rimozione questo browser riparte vuoto.",
+        confirmLabel: "Rimuovi il testo",
+        danger: true,
+        onConfirm: function () {
+          var cleared = FC.clearStorage(window.localStorage);
+          if (!cleared.ok) {
+            setBanner({ tone: "err", text: cleared.errors[0].message });
+            return;
+          }
+          state.corruptRaw = null;
+          state.document = cleared.document;
+          renderData();
+          setBanner({ tone: "ok", title: "Browser pronto", text: "Il testo illeggibile è stato rimosso. Puoi inserire o importare le giornate." });
+        }
+      });
+    }
+
+    function applyReplace() {
+      if (!state.pendingImport) return;
+      var next = state.pendingImport.document;
+      var saved = persist(next);
+      if (!saved.ok) {
+        setBanner({ tone: "err", text: saved.errors[0].message });
+        return;
+      }
+      var count = state.document.giornate.length;
+      state.pendingImport = null;
+      state.through = "all";
+      state.editingId = null;
+      clearFields();
+      clearImportPreview();
+      renderData();
+      setBanner({
+        tone: "ok",
+        title: "Archivio sostituito",
+        text: count === 1 ? "Caricata 1 giornata." : "Caricate " + count + " giornate."
+      });
+    }
+
+    function askReplace() {
+      if (!state.pendingImport) return;
+      if (state.document.giornate.length === 0) {
+        applyReplace();
+        return;
+      }
+      var incomingCount = state.pendingImport.document.giornate.length;
+      var currentCount = state.document.giornate.length;
+      openModal({
+        title: "Sostituire l'archivio?",
+        body: "Questo browser ha " + (currentCount === 1 ? "1 giornata" : currentCount + " giornate") + ". Il file ne contiene " + incomingCount + ". L'archivio attuale verrà sostituito. Scarica prima una copia, se ti serve.",
+        confirmLabel: "Sostituisci",
+        danger: true,
+        onConfirm: applyReplace
+      });
+    }
+
+    function doMerge() {
+      if (!state.pendingImport) return;
+      var merged = FC.mergeDocuments(state.document, state.pendingImport.document, new Date().toISOString());
+      if (!merged.ok) {
+        setBanner({ tone: "err", text: merged.errors[0].message });
+        return;
+      }
+      var saved = persist(merged.document);
+      if (!saved.ok) {
+        setBanner({ tone: "err", text: saved.errors[0].message });
+        return;
+      }
+      var message = mergeMessage(merged.added, merged.skipped);
+      state.pendingImport = null;
+      clearImportPreview();
+      renderData();
+      setBanner({ tone: "ok", title: "Archivio aggiornato", text: message });
+    }
+
+    function renderImportError(errors) {
+      state.pendingImport = null;
+      var preview = document.getElementById("import-preview");
+      preview.hidden = false;
+      clearNode(preview);
+      preview.appendChild(el("p", null, "File non accettato. I dati attuali restano."));
+      preview.appendChild(renderProblems(errors));
+      setBanner({ tone: "err", title: "Importazione annullata", text: "Il file non ha superato il controllo. L'archivio non è stato toccato." });
+    }
+
+    function renderImportPreview() {
+      var pending = state.pendingImport;
+      var preview = document.getElementById("import-preview");
+      preview.hidden = false;
+      clearNode(preview);
+      preview.appendChild(el("p", null, previewText(pending.filename, pending.document, state.document.giornate.length)));
+      var actions = el("div", { class: "stack" });
+      actions.appendChild(el("button", { type: "button", class: "btn primary", "data-merge": "true" }, "Aggiungi solo le giornate nuove"));
+      actions.appendChild(el("button", { type: "button", class: "btn secondary", "data-replace": "true" }, "Sostituisci i dati di questo browser"));
+      preview.appendChild(actions);
+    }
+
+    function readImport(file) {
+      if (state.corruptRaw != null) {
+        setBanner({ tone: "warn", title: "Importazione fermata", text: "Prima scarica o rimuovi il testo illeggibile. Non ho importato nulla." });
+        return;
+      }
+      if (file.size > 2000000) {
+        renderImportError([{ message: FC.message("too_large") }]);
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var parsed = FC.parseImportText(String(reader.result || ""));
+        if (!parsed.ok) {
+          renderImportError(parsed.errors);
+          return;
+        }
+        state.pendingImport = { filename: file.name || "copia.json", document: parsed.document };
+        renderImportPreview();
+        setBanner({ tone: "ok", title: "File controllato", text: "Puoi aggiungere le giornate nuove oppure sostituire l'archivio. Nulla è stato modificato finora." });
+      };
+      reader.onerror = function () {
+        setBanner({ tone: "err", title: "File non letto", text: "Non sono riuscito a leggere il file. I dati attuali restano." });
+      };
+      reader.readAsText(file);
+    }
+
+    function bind() {
+      document.querySelectorAll("[role='tab']").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          showPanel(tab.getAttribute("aria-controls").replace("panel-", ""));
+        });
+      });
+      document.querySelector(".nav").addEventListener("keydown", function (event) {
+        var tabs = Array.prototype.slice.call(document.querySelectorAll("[role='tab']"));
+        var index = tabs.indexOf(document.activeElement);
+        if (index < 0) return;
+        if (event.key === "ArrowRight") index = (index + 1) % tabs.length;
+        else if (event.key === "ArrowLeft") index = (index - 1 + tabs.length) % tabs.length;
+        else return;
+        event.preventDefault();
+        tabs[index].click();
+        tabs[index].focus();
+      });
+      document.querySelectorAll("[data-mode-global]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var mode = button.getAttribute("data-mode-global");
+          document.querySelectorAll("[data-match]").forEach(function (card) { setCardMode(card, mode); });
+          syncGlobal();
+        });
+      });
+      document.getElementById("scheda").addEventListener("submit", onSave);
+      document.querySelector("[data-clear-form]").addEventListener("click", function () {
+        clearFields();
+        renderFormChrome();
+      });
+      document.querySelector("[data-cancel-edit]").addEventListener("click", function () {
+        state.editingId = null;
+        clearFields();
+        renderFormChrome();
+        clearBanner();
+      });
+      document.getElementById("ordinal").addEventListener("input", function (event) {
+        event.target.removeAttribute("aria-invalid");
+        if (state.editingId) renderFormChrome();
+      });
+      document.getElementById("history-list").addEventListener("click", function (event) {
+        var edit = event.target.closest("[data-edit]");
+        if (edit) {
+          startEdit(edit.getAttribute("data-edit"));
+          return;
+        }
+        var remove = event.target.closest("[data-delete]");
+        if (remove) askDelete(remove.getAttribute("data-delete"));
+      });
+      document.getElementById("through").addEventListener("change", function (event) {
+        state.through = event.target.value === "all" ? "all" : Number(event.target.value);
+        renderTotals();
+      });
+      document.getElementById("export-btn").addEventListener("click", function () {
+        var exported = currentExport();
+        if (!exported.ok) {
+          setBanner({ tone: "err", text: exported.errors[0].message });
+          return;
+        }
+        downloadText(exported.filename, exported.text);
+        var count = exported.document.giornate.length;
+        setBanner({
+          tone: "ok",
+          title: "Copia pronta",
+          text: (count === 1 ? "File con 1 giornata." : "File con " + count + " giornate.") + " Conservalo: i dati restano solo su questo telefono."
+        });
+      });
+      document.getElementById("show-export").addEventListener("click", function () {
+        var exported = showExportText();
+        if (!exported) return;
+        document.getElementById("export-box").focus();
+        document.getElementById("export-box").select();
+      });
+      document.getElementById("copy-btn").addEventListener("click", function () {
+        var exported = showExportText();
+        if (!exported) return;
+        var box = document.getElementById("export-box");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(exported.text).then(function () {
+            setBanner({ tone: "ok", title: "Testo copiato", text: "Puoi incollarlo in un messaggio o in una nota." });
+          }).catch(function () {
+            box.focus();
+            box.select();
+            setBanner({ tone: "warn", title: "Seleziona il testo", text: "La copia automatica non è partita. Tieni premuto nel riquadro e copia." });
+          });
+          return;
+        }
+        box.focus();
+        box.select();
+        setBanner({ tone: "warn", title: "Seleziona il testo", text: "Tieni premuto nel riquadro e copia." });
+      });
+      document.getElementById("share-btn").addEventListener("click", function () {
+        var exported = currentExport();
+        if (!exported.ok || !navigator.share) return;
+        var file = new File([exported.text], exported.filename, { type: "application/json" });
+        navigator.share({ files: [file], title: "Finder 1X2" }).catch(function () {});
+      });
+      document.getElementById("import-file").addEventListener("change", function (event) {
+        var file = event.target.files && event.target.files[0];
+        event.target.value = "";
+        if (file) readImport(file);
+      });
+      document.getElementById("import-preview").addEventListener("click", function (event) {
+        if (event.target.closest("[data-merge]")) doMerge();
+        else if (event.target.closest("[data-replace]")) askReplace();
+      });
+      document.querySelector("[data-clear]").addEventListener("click", askClearAll);
+      document.querySelector("[data-download-raw]").addEventListener("click", function () {
+        if (state.corruptRaw == null) return;
+        downloadText("carmela-finder-1x2-illeggibile.txt", state.corruptRaw, "text/plain;charset=utf-8");
+        setBanner({ tone: "ok", title: "Testo scaricato", text: "I dati nel browser sono ancora lì, finché non li rimuovi." });
+      });
+      document.querySelector("[data-discard-corrupt]").addEventListener("click", askDiscardCorrupt);
+      document.getElementById("modal-cancel").addEventListener("click", function () { closeModal(false); });
+      document.getElementById("modal-confirm").addEventListener("click", function () { closeModal(true); });
+      document.querySelector("[data-modal-dismiss]").addEventListener("click", function () { closeModal(false); });
+      document.addEventListener("keydown", function (event) {
+        if (document.getElementById("modal").hidden) return;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeModal(false);
+          return;
+        }
+        if (event.key !== "Tab") return;
+        var buttons = document.querySelectorAll("#modal button");
+        if (!buttons.length) return;
+        var first = buttons[0];
+        var last = buttons[buttons.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
+    }
+
+    function boot() {
+      if (!FC) throw new Error("Nucleo mancante");
+      buildMatches();
+      bind();
+      var loaded;
+      try {
+        loaded = FC.loadFromStorage(window.localStorage);
+      } catch (error) {
+        loaded = { ok: false, unavailable: true };
+      }
+      if (!loaded.ok && loaded.unavailable) {
+        state.volatile = true;
+        state.document = FC.emptyDocument();
+      } else if (!loaded.ok) {
+        state.corruptRaw = typeof loaded.raw === "string" ? loaded.raw : "";
+        state.document = FC.emptyDocument();
+      } else {
+        state.document = loaded.document;
+      }
+      renderData();
+      showPanel(state.corruptRaw != null ? "copia" : "inserisci");
+      if (state.corruptRaw != null) {
+        setBanner({
+          tone: "warn",
+          title: "Dati non letti",
+          text: "In questo browser c'è un testo che non riconosco. Non l'ho cancellato e non lo sovrascrivo."
+        });
+      } else if (state.volatile) {
+        setBanner({
+          tone: "warn",
+          title: "Senza memoria",
+          text: "Questo browser non conserva le giornate. Puoi usarle in questa pagina e scaricare il file prima di chiuderla."
+        });
+      }
+      document.body.setAttribute("data-ready", "true");
+    }
+
+    try {
+      boot();
+    } catch (error) {
+      var banner = document.getElementById("banner");
+      banner.hidden = false;
+      banner.className = "banner err";
+      banner.textContent = "La pagina non è partita. I dati già presenti non risultano cancellati da questo errore.";
+      console.error(error);
+    }
+  }());
+  </script>
+  <noscript>
+    <p>Finder 1X2 ha bisogno di JavaScript, già incluso in questa pagina. Non scarica nulla da altri siti.</p>
+  </noscript>
+</body>
+</html>
