@@ -267,6 +267,35 @@
       font-weight: 700;
       margin: 2px 0 6px;
     }
+    .evo-picks { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 8px 0; }
+    .evo-picks button {
+      flex: 0 0 auto;
+      min-height: 44px;
+      min-width: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(28, 20, 48, 0.55);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 0 12px;
+    }
+    .evo-picks button[aria-pressed="true"] { background: var(--violet); border-color: var(--violet); color: var(--ink); }
+    .evo-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .evo-table { border-collapse: separate; border-spacing: 0; min-width: 100%; }
+    .evo-table .sticky {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: #1b1430;
+      text-align: left;
+      font-weight: 800;
+    }
+    .evo-table thead .sticky { z-index: 2; }
+    .evo-wide { min-width: 520px; }
+    td.rose { box-shadow: inset 0 -3px 0 #f3f0ff; }
+    .evo-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 0; }
+    .evo-mini { font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--faint); letter-spacing: -0.02em; }
     .history { display: flex; flex-direction: column; gap: 6px; }
     .day {
       width: 100%;
@@ -448,6 +477,35 @@
             <tbody id="through-body" data-through-body></tbody>
           </table>
         </div>
+      </div>
+    </section>
+    <section class="card" id="evo-card">
+      <div class="kicker">Evoluzione</div>
+      <div class="evo-picks" id="evo-picks" data-evo-picks></div>
+      <p class="note" id="evo-empty" data-evo-empty hidden>Nessuna giornata completa</p>
+      <div class="evo-scroll" id="evo-one" data-evo-one hidden>
+        <table class="evo-table">
+          <thead>
+            <tr>
+              <th class="sticky" scope="col">G</th>
+              <th scope="col">N°</th>
+              <th scope="col">Segno</th>
+              <th class="c1" scope="col">1</th>
+              <th class="cx" scope="col">X</th>
+              <th class="c2" scope="col">2</th>
+              <th scope="col">Forma</th>
+            </tr>
+          </thead>
+          <tbody id="evo-body" data-evo-body></tbody>
+        </table>
+      </div>
+      <div class="evo-scroll" id="evo-all" data-evo-all hidden>
+        <table class="evo-table evo-wide">
+          <thead>
+            <tr id="evo-all-head"></tr>
+          </thead>
+          <tbody id="evo-all-body" data-evo-all-body></tbody>
+        </table>
       </div>
     </section>
     <section class="card" id="history-card">
@@ -886,6 +944,40 @@
     };
   }
 
+  function evolution(document) {
+    var base = validateDocument(document);
+    if (!base.ok) return base;
+    var counts = blankCounts();
+    var positions = POSITIONS.map(function () { return []; });
+    var seen = 0;
+    var ordered = base.document.giornate.slice().sort(function (a, b) { return a.ordinal - b.ordinal; });
+    ordered.forEach(function (giornata) {
+      if (!isComplete(giornata)) return;
+      giornata.matches.forEach(function (match) {
+        counts[match.position - 1][match.sign] += 1;
+      });
+      seen += 1;
+      var shaped = shapeRows(counts, seen);
+      shaped.forEach(function (row) {
+        var sign = giornata.matches[row.position - 1].sign;
+        positions[row.position - 1].push({
+          ordinal: giornata.ordinal,
+          num: matchNumber(giornata.ordinal, row.position),
+          sign: sign,
+          "1": row["1"],
+          X: row.X,
+          "2": row["2"],
+          forma: row.forma,
+          majority: row.majority,
+          minority: row.minority,
+          rose: sign
+        });
+      });
+    });
+    positions.forEach(function (lines) { lines.reverse(); });
+    return { ok: true, positions: positions };
+  }
+
   function parseImportText(text) {
     if (typeof text !== "string") return fail([err("bad_json")]);
     if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
@@ -1005,6 +1097,7 @@
     deleteGiornata: deleteGiornata,
     sums: sums,
     sumsThrough: sumsThrough,
+    evolution: evolution,
     mergeDocuments: mergeDocuments,
     loadFromStorage: loadFromStorage,
     saveToStorage: saveToStorage,
@@ -1028,7 +1121,8 @@
     volatile: false,
     pendingImport: null,
     modalOrdinal: null,
-    through: null
+    through: null,
+    evo: "1"
   };
 
   function el(tag, attrs, text) {
@@ -1212,6 +1306,7 @@
   function refreshAround(ordinal) {
     paintSums();
     paintThrough();
+    paintEvo();
     paintHistory();
     var giornata = giornataOf(ordinal);
     document.querySelectorAll("[data-pos]").forEach(function (row) {
@@ -1364,6 +1459,97 @@
     fillSumBody(document.getElementById("through-body"), result.rows, "data-through-row");
   }
 
+  function countCell(sign, value, line) {
+    var td = document.createElement("td");
+    td.className = sign === "1" ? "c1" : sign === "X" ? "cx" : "c2";
+    td.textContent = String(value);
+    td.setAttribute("data-evo-count", sign);
+    if (line.majority.indexOf(sign) !== -1) {
+      td.className += " mag";
+      td.setAttribute("data-majority", sign);
+    }
+    if (line.minority.indexOf(sign) !== -1) {
+      td.className += " min";
+      td.setAttribute("data-minority", sign);
+    }
+    if (line.rose === sign) {
+      td.className += " rose";
+      td.setAttribute("data-rose", sign);
+    }
+    return td;
+  }
+
+  function paintEvo() {
+    var picks = document.getElementById("evo-picks");
+    clear(picks);
+    ["all", "1", "2", "3", "4", "5", "6"].forEach(function (id) {
+      var button = el("button", {
+        type: "button",
+        "data-evo": id,
+        "aria-pressed": state.evo === id ? "true" : "false"
+      }, id === "all" ? "Tutte" : "P" + id);
+      button.addEventListener("click", function () {
+        state.evo = id;
+        paintEvo();
+      });
+      picks.appendChild(button);
+    });
+    var result = FC.evolution(state.document);
+    var empty = document.getElementById("evo-empty");
+    var one = document.getElementById("evo-one");
+    var all = document.getElementById("evo-all");
+    var has = result.positions[0].length > 0;
+    empty.hidden = has;
+    if (!has) {
+      one.hidden = true;
+      all.hidden = true;
+      return;
+    }
+    var showAll = state.evo === "all";
+    one.hidden = showAll;
+    all.hidden = !showAll;
+    if (!showAll) {
+      var lines = result.positions[Number(state.evo) - 1];
+      var body = document.getElementById("evo-body");
+      clear(body);
+      lines.forEach(function (line) {
+        var tr = el("tr", { "data-evo-row": String(line.ordinal), "data-forma": line.forma, "data-sign": line.sign, "data-num": String(line.num) });
+        tr.appendChild(el("th", { scope: "row", class: "sticky" }, "G" + line.ordinal));
+        tr.appendChild(el("td", null, String(line.num)));
+        var signCell = document.createElement("td");
+        signCell.appendChild(el("span", { class: "pill s" + line.sign }, line.sign));
+        tr.appendChild(signCell);
+        tr.appendChild(countCell("1", line["1"], line));
+        tr.appendChild(countCell("X", line.X, line));
+        tr.appendChild(countCell("2", line["2"], line));
+        tr.appendChild(el("td", { class: "forma" }, line.forma));
+        body.appendChild(tr);
+      });
+      return;
+    }
+    var head = document.getElementById("evo-all-head");
+    clear(head);
+    head.appendChild(el("th", { class: "sticky", scope: "col" }, "G"));
+    for (var position = 1; position <= 6; position += 1) head.appendChild(el("th", { scope: "col" }, "P" + position));
+    var grid = document.getElementById("evo-all-body");
+    clear(grid);
+    result.positions[0].forEach(function (sample, index) {
+      var tr = el("tr", { "data-evo-grid": String(sample.ordinal) });
+      tr.appendChild(el("th", { scope: "row", class: "sticky" }, "G" + sample.ordinal));
+      for (var p = 1; p <= 6; p += 1) {
+        var line = result.positions[p - 1][index];
+        var td = document.createElement("td");
+        td.setAttribute("data-evo-cell", sample.ordinal + "-" + p);
+        var box = el("span", { class: "evo-cell" });
+        box.appendChild(el("span", { class: "pill s" + line.sign }, line.sign));
+        box.appendChild(el("span", { class: "evo-mini", "data-evo-mini": "" }, line["1"] + "·" + line.X + "·" + line["2"]));
+        td.appendChild(box);
+        tr.appendChild(td);
+      }
+      grid.appendChild(tr);
+    });
+  }
+
   function paintHistory() {
     var root = document.getElementById("history");
     clear(root);
@@ -1399,6 +1585,7 @@
     paintEntry();
     paintSums();
     paintThrough();
+    paintEvo();
     paintHistory();
   }
 
@@ -1497,6 +1684,7 @@
       document.getElementById("entry").hidden = true;
       document.getElementById("sums").hidden = true;
       document.getElementById("through-card").hidden = true;
+      document.getElementById("evo-card").hidden = true;
       document.getElementById("history-card").hidden = true;
       document.getElementById("corrupt-box").hidden = false;
       openMenu();
@@ -1557,6 +1745,7 @@
       document.getElementById("entry").hidden = false;
       document.getElementById("sums").hidden = false;
       document.getElementById("through-card").hidden = false;
+      document.getElementById("evo-card").hidden = false;
       document.getElementById("history-card").hidden = false;
       document.getElementById("corrupt-box").hidden = true;
       setMenuNote("");
