@@ -294,6 +294,40 @@
     .evo-table thead .sticky { z-index: 2; }
     .evo-wide { min-width: 520px; }
     td.rose { box-shadow: inset 0 -3px 0 #f3f0ff; }
+    .evo-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .evo-filters button {
+      min-height: 40px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(28, 20, 48, 0.55);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 10px;
+    }
+    .evo-filters button[aria-pressed="true"] { background: var(--violet); border-color: var(--violet); color: var(--ink); }
+    .evo-summary { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .magg-badge, .pari-badge {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      vertical-align: middle;
+    }
+    .magg-badge { background: var(--teal); color: var(--ink); }
+    .pari-badge { background: rgba(255, 159, 67, 0.18); color: var(--orange); border: 1px solid var(--orange); }
+    .min-badge { background: var(--orange); color: var(--ink); }
+    .magg-eq { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+    .min-eq, .min-plus { background: transparent; color: var(--orange); border: 1px solid var(--orange); }
+    .magg-plus { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+    td.evo-min { box-shadow: inset 0 0 0 1.5px var(--orange); }
+    td.evo-magg-eq { box-shadow: inset 0 0 0 1.5px var(--teal); }
+    td.evo-min-eq { box-shadow: inset 0 0 0 1.5px var(--orange); }
+    td.evo-hit { box-shadow: inset 0 0 0 1.5px var(--teal); }
+    td.evo-dim { opacity: 0.28; }
     .evo-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 0; }
     .evo-mini { font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--faint); letter-spacing: -0.02em; }
     .history { display: flex; flex-direction: column; gap: 6px; }
@@ -482,6 +516,16 @@
     <section class="card" id="evo-card">
       <div class="kicker">Evoluzione</div>
       <div class="evo-picks" id="evo-picks" data-evo-picks></div>
+      <div class="evo-filters">
+        <button type="button" data-evo-filter="tutti" aria-pressed="true">Tutti</button>
+        <button type="button" data-evo-filter="magg" aria-pressed="false">Maggioranza</button>
+        <button type="button" data-evo-filter="min" aria-pressed="false">Minoranza</button>
+        <button type="button" data-evo-filter="maggPari" aria-pressed="false">Magg. pari</button>
+        <button type="button" data-evo-filter="minPari" aria-pressed="false">Min. pari</button>
+        <button type="button" data-evo-filter="maggPlus" aria-pressed="false">Magg. + altri pari</button>
+        <button type="button" data-evo-filter="minPlus" aria-pressed="false">Min. + altri pari</button>
+      </div>
+      <p class="evo-summary" id="evo-summary" data-evo-summary></p>
       <p class="note" id="evo-empty" data-evo-empty hidden>Nessuna giornata completa</p>
       <div class="evo-scroll" id="evo-one" data-evo-one hidden>
         <table class="evo-table">
@@ -951,8 +995,18 @@
     var positions = POSITIONS.map(function () { return []; });
     var seen = 0;
     var ordered = base.document.giornate.slice().sort(function (a, b) { return a.ordinal - b.ordinal; });
+    function extremes(count) {
+      var total = count["1"] + count.X + count["2"];
+      if (!total) return { max: [], min: [], pari3: true };
+      var max = Math.max(count["1"], count.X, count["2"]);
+      var min = Math.min(count["1"], count.X, count["2"]);
+      var maxSigns = SIGNS.filter(function (sign) { return count[sign] === max; });
+      var minSigns = SIGNS.filter(function (sign) { return count[sign] === min; });
+      return { max: maxSigns, min: minSigns, pari3: maxSigns.length === 3 };
+    }
     ordered.forEach(function (giornata) {
       if (!isComplete(giornata)) return;
+      var before = counts.map(extremes);
       giornata.matches.forEach(function (match) {
         counts[match.position - 1][match.sign] += 1;
       });
@@ -960,6 +1014,7 @@
       var shaped = shapeRows(counts, seen);
       shaped.forEach(function (row) {
         var sign = giornata.matches[row.position - 1].sign;
+        var prior = before[row.position - 1];
         positions[row.position - 1].push({
           ordinal: giornata.ordinal,
           num: matchNumber(giornata.ordinal, row.position),
@@ -970,7 +1025,11 @@
           forma: row.forma,
           majority: row.majority,
           minority: row.minority,
-          rose: sign
+          rose: sign,
+          priorMajority: prior.max,
+          priorMin: prior.min,
+          pari3: prior.pari3,
+          tie: prior.max.length > 1
         });
       });
     });
@@ -1122,7 +1181,8 @@
     pendingImport: null,
     modalOrdinal: null,
     through: null,
-    evo: "1"
+    evo: "1",
+    evoFilter: "tutti"
   };
 
   function el(tag, attrs, text) {
@@ -1479,6 +1539,87 @@
     return td;
   }
 
+  function evoKinds(line) {
+    if (line.pari3) return ["pari3"];
+    var kinds = [];
+    if (line.priorMajority.length === 1 && line.sign === line.priorMajority[0]) kinds.push("magg");
+    if (line.priorMin.length === 1 && line.sign === line.priorMin[0]) kinds.push("min");
+    if (line.priorMajority.length === 2 && line.priorMajority.indexOf(line.sign) !== -1) kinds.push("maggPari");
+    if (line.priorMin.length === 2 && line.priorMin.indexOf(line.sign) !== -1) kinds.push("minPari");
+    if (line.priorMajority.length === 1 && line.priorMin.length === 2 && line.sign === line.priorMajority[0]) kinds.push("maggPlus");
+    if (line.priorMin.length === 1 && line.priorMajority.length === 2 && line.sign === line.priorMin[0]) kinds.push("minPlus");
+    return kinds;
+  }
+
+  function evoRule(line, rule) {
+    if (line.pari3) return { valid: false, hit: false };
+    var maxOne = line.priorMajority.length === 1;
+    var minOne = line.priorMin.length === 1;
+    var maxTwo = line.priorMajority.length === 2;
+    var minTwo = line.priorMin.length === 2;
+    if (rule === "magg") return { valid: maxOne, hit: maxOne && line.sign === line.priorMajority[0] };
+    if (rule === "min") return { valid: minOne, hit: minOne && line.sign === line.priorMin[0] };
+    if (rule === "maggPari") return { valid: maxTwo, hit: maxTwo && line.priorMajority.indexOf(line.sign) !== -1 };
+    if (rule === "minPari") return { valid: minTwo, hit: minTwo && line.priorMin.indexOf(line.sign) !== -1 };
+    if (rule === "maggPlus") return { valid: maxOne && minTwo, hit: maxOne && minTwo && line.sign === line.priorMajority[0] };
+    if (rule === "minPlus") return { valid: minOne && maxTwo, hit: minOne && maxTwo && line.sign === line.priorMin[0] };
+    return { valid: false, hit: false };
+  }
+
+  function evoShow(line) {
+    if (state.evoFilter === "tutti") return true;
+    if (line.pari3) return false;
+    return evoRule(line, state.evoFilter).hit;
+  }
+
+  function rateText(hits, valid) {
+    if (!valid) return "0/0";
+    return hits + "/" + valid + " (" + Math.round((hits / valid) * 100) + "%)";
+  }
+
+  function ruleTotals(result, rule) {
+    var hits = 0;
+    var valid = 0;
+    var per = result.positions.map(function (lines) {
+      var h = 0;
+      var v = 0;
+      lines.forEach(function (line) {
+        var ruleState = evoRule(line, rule);
+        if (!ruleState.valid) return;
+        v += 1;
+        if (ruleState.hit) h += 1;
+      });
+      hits += h;
+      valid += v;
+      return { hits: h, valid: v };
+    });
+    return { hits: hits, valid: valid, per: per };
+  }
+
+  function paintEvoSummary(result) {
+    var summary = document.getElementById("evo-summary");
+    var active = state.evoFilter === "tutti" ? "magg" : state.evoFilter;
+    var stats = ruleTotals(result, active);
+    if (state.evoFilter === "tutti") {
+      var names = [["magg", "Maggioranza"], ["min", "Minoranza"], ["maggPari", "Magg. pari"], ["minPari", "Min. pari"], ["maggPlus", "Magg. + altri pari"], ["minPlus", "Min. + altri pari"]];
+      summary.textContent = names.map(function (item) {
+        var total = ruleTotals(result, item[0]);
+        return item[1] + " " + rateText(total.hits, total.valid);
+      }).join(" · ");
+      summary.setAttribute("data-p1", rateText(stats.per[0].hits, stats.per[0].valid));
+      summary.setAttribute("data-total", rateText(stats.hits, stats.valid));
+    } else {
+      summary.textContent = stats.per.map(function (item, index) {
+        return "P" + (index + 1) + ": " + rateText(item.hits, item.valid);
+      }).join(" · ") + " · Totale: " + rateText(stats.hits, stats.valid);
+      summary.setAttribute("data-p1", rateText(stats.per[0].hits, stats.per[0].valid));
+      summary.setAttribute("data-total", rateText(stats.hits, stats.valid));
+    }
+    document.querySelectorAll("[data-evo-filter]").forEach(function (button) {
+      button.setAttribute("aria-pressed", button.getAttribute("data-evo-filter") === state.evoFilter ? "true" : "false");
+    });
+  }
+
   function paintEvo() {
     var picks = document.getElementById("evo-picks");
     clear(picks);
@@ -1495,6 +1636,7 @@
       picks.appendChild(button);
     });
     var result = FC.evolution(state.document);
+    paintEvoSummary(result);
     var empty = document.getElementById("evo-empty");
     var one = document.getElementById("evo-one");
     var all = document.getElementById("evo-all");
@@ -1513,11 +1655,34 @@
       var body = document.getElementById("evo-body");
       clear(body);
       lines.forEach(function (line) {
-        var tr = el("tr", { "data-evo-row": String(line.ordinal), "data-forma": line.forma, "data-sign": line.sign, "data-num": String(line.num) });
+        if (!evoShow(line)) return;
+        var kinds = evoKinds(line);
+        var tr = el("tr", {
+          "data-evo-row": String(line.ordinal),
+          "data-forma": line.forma,
+          "data-sign": line.sign,
+          "data-num": String(line.num),
+          "data-tie": line.tie ? "1" : "0",
+          "data-kind": kinds[0] || "",
+          "data-kinds": kinds.join(" ")
+        });
         tr.appendChild(el("th", { scope: "row", class: "sticky" }, "G" + line.ordinal));
         tr.appendChild(el("td", null, String(line.num)));
         var signCell = document.createElement("td");
         signCell.appendChild(el("span", { class: "pill s" + line.sign }, line.sign));
+        function addBadge(kind, className, attr, label) {
+          if (kinds.indexOf(kind) === -1) return;
+          var badge = el("span", { class: className }, label);
+          badge.setAttribute(attr, "");
+          signCell.appendChild(badge);
+        }
+        addBadge("magg", "magg-badge", "data-magg", "MAGG");
+        addBadge("min", "magg-badge min-badge", "data-min", "MIN");
+        addBadge("maggPari", "magg-badge magg-eq", "data-magg-pari", "MAGG=");
+        addBadge("minPari", "pari-badge", "data-min-pari", "MIN=");
+        addBadge("maggPlus", "magg-badge magg-plus", "data-magg-plus", "MAGG·=");
+        addBadge("minPlus", "pari-badge min-plus", "data-min-plus", "MIN·=");
+        addBadge("pari3", "pari-badge", "data-pari3", "PARI3");
         tr.appendChild(signCell);
         tr.appendChild(countCell("1", line["1"], line));
         tr.appendChild(countCell("X", line.X, line));
@@ -1534,18 +1699,45 @@
     var grid = document.getElementById("evo-all-body");
     clear(grid);
     result.positions[0].forEach(function (sample, index) {
+      var rowLines = [];
+      for (var q = 1; q <= 6; q += 1) rowLines.push(result.positions[q - 1][index]);
+      var pariRow = rowLines.every(function (line) { return line.pari3; });
+      if (pariRow && state.evoFilter !== "tutti") return;
       var tr = el("tr", { "data-evo-grid": String(sample.ordinal) });
       tr.appendChild(el("th", { scope: "row", class: "sticky" }, "G" + sample.ordinal));
-      for (var p = 1; p <= 6; p += 1) {
-        var line = result.positions[p - 1][index];
+      rowLines.forEach(function (line, positionIndex) {
+        var kinds = evoKinds(line);
         var td = document.createElement("td");
-        td.setAttribute("data-evo-cell", sample.ordinal + "-" + p);
-        var box = el("span", { class: "evo-cell" });
-        box.appendChild(el("span", { class: "pill s" + line.sign }, line.sign));
-        box.appendChild(el("span", { class: "evo-mini", "data-evo-mini": "" }, line["1"] + "·" + line.X + "·" + line["2"]));
-        td.appendChild(box);
+        td.setAttribute("data-evo-cell", sample.ordinal + "-" + (positionIndex + 1));
+        td.setAttribute("data-kinds", kinds.join(" "));
+        if (line.pari3 && state.evoFilter !== "tutti") {
+          td.className = "evo-dim";
+        } else {
+          if (kinds.indexOf("magg") !== -1 || kinds.indexOf("maggPlus") !== -1) td.className = "evo-hit";
+          if (kinds.indexOf("min") !== -1 || kinds.indexOf("minPlus") !== -1) td.className = (td.className ? td.className + " " : "") + "evo-min";
+          if (kinds.indexOf("maggPari") !== -1) td.className = (td.className ? td.className + " " : "") + "evo-magg-eq";
+          if (kinds.indexOf("minPari") !== -1) td.className = (td.className ? td.className + " " : "") + "evo-min-eq";
+          if (!evoShow(line)) td.className = (td.className ? td.className + " " : "") + "evo-dim";
+          var box = el("span", { class: "evo-cell" });
+          box.appendChild(el("span", { class: "pill s" + line.sign }, line.sign));
+          function gridBadge(kind, className, attr, label) {
+            if (kinds.indexOf(kind) === -1) return;
+            var badge = el("span", { class: className }, label);
+            badge.setAttribute(attr, "");
+            box.appendChild(badge);
+          }
+          gridBadge("pari3", "pari-badge", "data-pari3", "PARI3");
+          gridBadge("magg", "magg-badge", "data-magg", "MAGG");
+          gridBadge("min", "magg-badge min-badge", "data-min", "MIN");
+          gridBadge("maggPari", "magg-badge magg-eq", "data-magg-pari", "MAGG=");
+          gridBadge("minPari", "pari-badge", "data-min-pari", "MIN=");
+          gridBadge("maggPlus", "magg-badge magg-plus", "data-magg-plus", "MAGG·=");
+          gridBadge("minPlus", "pari-badge min-plus", "data-min-plus", "MIN·=");
+          box.appendChild(el("span", { class: "evo-mini", "data-evo-mini": "" }, line["1"] + "·" + line.X + "·" + line["2"]));
+          td.appendChild(box);
+        }
         tr.appendChild(td);
-      }
+      });
       grid.appendChild(tr);
     });
   }
@@ -1692,6 +1884,12 @@
       state.document = loaded.document;
       render();
     }
+    document.querySelectorAll("[data-evo-filter]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        state.evoFilter = button.getAttribute("data-evo-filter");
+        paintEvo();
+      });
+    });
     document.getElementById("menu-btn").addEventListener("click", function () {
       var menu = document.getElementById("menu");
       menu.hidden = !menu.hidden;
