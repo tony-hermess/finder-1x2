@@ -231,6 +231,42 @@
       font-weight: 700;
       color: var(--muted);
     }
+    .through-list {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 8px 0;
+      padding-bottom: 2px;
+    }
+    .through-list button {
+      flex: 0 0 auto;
+      min-height: 48px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(28, 20, 48, 0.55);
+      color: var(--text);
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.15;
+    }
+    .through-list button[aria-pressed="true"] {
+      background: var(--violet);
+      border-color: var(--violet);
+      color: var(--ink);
+    }
+    .through-list .tg { font-weight: 800; font-size: 14px; }
+    .through-list .tr { font-family: var(--mono); font-size: 11px; font-weight: 700; opacity: 0.8; }
+    .through-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .through-nums {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--faint);
+      font-weight: 700;
+      margin: 2px 0 6px;
+    }
     .history { display: flex; flex-direction: column; gap: 6px; }
     .day {
       width: 100%;
@@ -382,6 +418,36 @@
       <div id="rows" data-rows></div>
       <div class="tools">
         <button type="button" class="text-btn" id="delete-btn" data-delete hidden>Elimina</button>
+      </div>
+    </section>
+    <section class="card" id="through-card">
+      <div class="kicker">Somme per giornata</div>
+      <p class="note" id="through-empty" data-through-empty hidden>Nessuna giornata completa</p>
+      <div class="through-list" id="through-list" data-through-list></div>
+      <div id="through-detail" data-through-detail hidden>
+        <div class="through-head">
+          <div class="g-line">
+            <div class="g-num" id="through-open" data-through-open></div>
+            <div class="range" id="through-range" data-through-range></div>
+          </div>
+        </div>
+        <p class="note" id="through-note" data-through-note></p>
+        <div class="through-nums" id="through-nums" data-through-nums></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="pos" scope="col">Pos</th>
+                <th class="c1" scope="col">1</th>
+                <th class="cx" scope="col">X</th>
+                <th class="c2" scope="col">2</th>
+                <th scope="col">Tot</th>
+                <th scope="col">Forma</th>
+              </tr>
+            </thead>
+            <tbody id="through-body" data-through-body></tbody>
+          </table>
+        </div>
       </div>
     </section>
     <section class="card" id="history-card">
@@ -745,31 +811,15 @@
     };
   }
 
-  function sums(document) {
-    var base = validateDocument(document);
-    if (!base.ok) return base;
-    var counts = POSITIONS.map(function () { return { "1": 0, X: 0, "2": 0 }; });
-    var completeCount = 0;
-    var partialCount = 0;
-    base.document.giornate.forEach(function (giornata) {
-      if (!isComplete(giornata)) {
-        partialCount += 1;
-        return;
-      }
-      completeCount += 1;
-      giornata.matches.forEach(function (match) {
-        counts[match.position - 1][match.sign] += 1;
-      });
-    });
-    var rows = POSITIONS.map(function (position) {
+  function shapeRows(counts, counted) {
+    return POSITIONS.map(function (position) {
       var count = counts[position - 1];
       var values = [count["1"], count.X, count["2"]];
       var max = Math.max.apply(null, values);
       var min = Math.min.apply(null, values);
-      var tied = max === min;
       var majority = [];
       var minority = [];
-      if (!tied && completeCount > 0) {
+      if (max !== min && counted > 0) {
         SIGNS.forEach(function (sign) {
           if (count[sign] === max) majority.push(sign);
           if (count[sign] === min) minority.push(sign);
@@ -786,7 +836,54 @@
         minority: minority
       };
     });
-    return { ok: true, completeCount: completeCount, partialCount: partialCount, rows: rows };
+  }
+
+  function blankCounts() {
+    return POSITIONS.map(function () { return { "1": 0, X: 0, "2": 0 }; });
+  }
+
+  function sums(document) {
+    var base = validateDocument(document);
+    if (!base.ok) return base;
+    var counts = blankCounts();
+    var completeCount = 0;
+    var partialCount = 0;
+    base.document.giornate.forEach(function (giornata) {
+      if (!isComplete(giornata)) {
+        partialCount += 1;
+        return;
+      }
+      completeCount += 1;
+      giornata.matches.forEach(function (match) {
+        counts[match.position - 1][match.sign] += 1;
+      });
+    });
+    return { ok: true, completeCount: completeCount, partialCount: partialCount, rows: shapeRows(counts, completeCount) };
+  }
+
+  function sumsThrough(document, throughOrdinal) {
+    var base = validateDocument(document);
+    if (!base.ok) return base;
+    if (typeof throughOrdinal !== "number" || !Number.isInteger(throughOrdinal) || throughOrdinal < 1) {
+      return fail([err("ordinal_invalid")]);
+    }
+    var counts = blankCounts();
+    var included = [];
+    base.document.giornate.forEach(function (giornata) {
+      if (giornata.ordinal > throughOrdinal || !isComplete(giornata)) return;
+      included.push(giornata.ordinal);
+      giornata.matches.forEach(function (match) {
+        counts[match.position - 1][match.sign] += 1;
+      });
+    });
+    return {
+      ok: true,
+      through: throughOrdinal,
+      included: included,
+      rows: shapeRows(counts, included.length),
+      from: matchNumber(throughOrdinal, 1),
+      to: matchNumber(throughOrdinal, 6)
+    };
   }
 
   function parseImportText(text) {
@@ -907,6 +1004,7 @@
     setOutcome: setOutcome,
     deleteGiornata: deleteGiornata,
     sums: sums,
+    sumsThrough: sumsThrough,
     mergeDocuments: mergeDocuments,
     loadFromStorage: loadFromStorage,
     saveToStorage: saveToStorage,
@@ -929,7 +1027,8 @@
     corruptRaw: null,
     volatile: false,
     pendingImport: null,
-    modalOrdinal: null
+    modalOrdinal: null,
+    through: null
   };
 
   function el(tag, attrs, text) {
@@ -1112,6 +1211,7 @@
 
   function refreshAround(ordinal) {
     paintSums();
+    paintThrough();
     paintHistory();
     var giornata = giornataOf(ordinal);
     document.querySelectorAll("[data-pos]").forEach(function (row) {
@@ -1181,6 +1281,89 @@
     });
   }
 
+  function completeOrdinals() {
+    return state.document.giornate.filter(function (giornata) {
+      return FC.isComplete(giornata);
+    }).map(function (giornata) { return giornata.ordinal; }).sort(function (a, b) { return b - a; });
+  }
+
+  function selectedThrough(list) {
+    if (!list.length) return null;
+    if (state.through != null && list.indexOf(state.through) !== -1) return state.through;
+    return list[0];
+  }
+
+  function fillSumBody(body, rows, rowAttr) {
+    clear(body);
+    rows.forEach(function (row) {
+      var tr = el("tr", {});
+      tr.setAttribute(rowAttr, String(row.position));
+      tr.setAttribute("data-forma", row.forma);
+      tr.appendChild(el("th", { scope: "row", class: "pos" }, "P" + row.position));
+      ["1", "X", "2"].forEach(function (sign) {
+        var td = document.createElement("td");
+        td.className = sign === "1" ? "c1" : sign === "X" ? "cx" : "c2";
+        td.textContent = String(row[sign]);
+        if (row.majority.indexOf(sign) !== -1) {
+          td.className += " mag";
+          td.setAttribute("data-majority", sign);
+        }
+        if (row.minority.indexOf(sign) !== -1) {
+          td.className += " min";
+          td.setAttribute("data-minority", sign);
+        }
+        tr.appendChild(td);
+      });
+      tr.appendChild(el("td", null, String(row.totale)));
+      tr.appendChild(el("td", { class: "forma" }, row.forma));
+      body.appendChild(tr);
+    });
+  }
+
+  function paintThrough() {
+    var list = completeOrdinals();
+    var empty = document.getElementById("through-empty");
+    var detail = document.getElementById("through-detail");
+    var host = document.getElementById("through-list");
+    clear(host);
+    if (!list.length) {
+      empty.hidden = false;
+      detail.hidden = true;
+      return;
+    }
+    empty.hidden = true;
+    detail.hidden = false;
+    var chosen = selectedThrough(list);
+    list.forEach(function (ordinal) {
+      var button = el("button", {
+        type: "button",
+        "data-through": String(ordinal),
+        "aria-pressed": ordinal === chosen ? "true" : "false"
+      });
+      button.appendChild(el("span", { class: "tg" }, "G" + ordinal));
+      button.appendChild(el("span", { class: "tr" }, FC.matchNumber(ordinal, 1) + "–" + FC.matchNumber(ordinal, 6)));
+      button.addEventListener("click", function () {
+        state.through = ordinal;
+        paintThrough();
+      });
+      host.appendChild(button);
+    });
+    var result = FC.sumsThrough(state.document, chosen);
+    document.getElementById("through-open").textContent = "G" + chosen;
+    document.getElementById("through-open").setAttribute("data-through-open", String(chosen));
+    var range = document.getElementById("through-range");
+    range.textContent = result.from + "–" + result.to;
+    range.setAttribute("data-through-range", result.from + "-" + result.to);
+    var nums = [];
+    for (var position = 1; position <= 6; position += 1) nums.push(String(FC.matchNumber(chosen, position)));
+    document.getElementById("through-nums").textContent = nums.join(" ");
+    var included = result.included.length;
+    document.getElementById("through-note").textContent = included === 1
+      ? "Dalla giornata 1 · 1 completa"
+      : "Dalla giornata 1 alla " + chosen + " · " + included + " complete";
+    fillSumBody(document.getElementById("through-body"), result.rows, "data-through-row");
+  }
+
   function paintHistory() {
     var root = document.getElementById("history");
     clear(root);
@@ -1215,6 +1398,7 @@
     if (state.corruptRaw != null) return;
     paintEntry();
     paintSums();
+    paintThrough();
     paintHistory();
   }
 
@@ -1312,6 +1496,7 @@
       state.document = FC.emptyDocument();
       document.getElementById("entry").hidden = true;
       document.getElementById("sums").hidden = true;
+      document.getElementById("through-card").hidden = true;
       document.getElementById("history-card").hidden = true;
       document.getElementById("corrupt-box").hidden = false;
       openMenu();
@@ -1371,6 +1556,7 @@
       state.document = cleared.document;
       document.getElementById("entry").hidden = false;
       document.getElementById("sums").hidden = false;
+      document.getElementById("through-card").hidden = false;
       document.getElementById("history-card").hidden = false;
       document.getElementById("corrupt-box").hidden = true;
       setMenuNote("");
