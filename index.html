@@ -330,6 +330,10 @@
     td.evo-dim { opacity: 0.28; }
     .evo-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px 0; }
     .evo-mini { font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--faint); letter-spacing: -0.02em; }
+    .evo-next { display: flex; align-items: center; justify-content: center; gap: 2px; margin-top: 2px; }
+    .evo-next .pill { width: 18px; height: 18px; font-size: 10px; border-radius: 5px; }
+    .dopo { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .dopo .badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 72px; }
     .history { display: flex; flex-direction: column; gap: 6px; }
     .day {
       width: 100%;
@@ -538,6 +542,7 @@
               <th class="cx" scope="col">X</th>
               <th class="c2" scope="col">2</th>
               <th scope="col">Forma</th>
+              <th scope="col">Dopo</th>
             </tr>
           </thead>
           <tbody id="evo-body" data-evo-body></tbody>
@@ -1620,6 +1625,79 @@
     });
   }
 
+  function nextOf(line, position) {
+    var num = line.ordinal * 6 + position;
+    var next = giornataOf(line.ordinal + 1);
+    if (!next || !FC.isComplete(next)) return { sign: null, num: num, kinds: [] };
+    var sign = next.matches[position - 1].sign;
+    var c1 = line["1"];
+    var cx = line.X;
+    var c2 = line["2"];
+    var pari3 = c1 === cx && cx === c2;
+    var maxSigns = [];
+    var minSigns = [];
+    if (!pari3) {
+      var max = Math.max(c1, cx, c2);
+      var min = Math.min(c1, cx, c2);
+      if (c1 === max) maxSigns.push("1");
+      if (cx === max) maxSigns.push("X");
+      if (c2 === max) maxSigns.push("2");
+      if (c1 === min) minSigns.push("1");
+      if (cx === min) minSigns.push("X");
+      if (c2 === min) minSigns.push("2");
+    }
+    return {
+      sign: sign,
+      num: num,
+      kinds: evoKinds({ pari3: pari3, priorMajority: maxSigns, priorMin: minSigns, sign: sign, tie: maxSigns.length > 1 })
+    };
+  }
+
+  function appendKindBadges(parent, kinds) {
+    function add(kind, className, attr, label) {
+      if (kinds.indexOf(kind) === -1) return;
+      var badge = el("span", { class: className }, label);
+      badge.setAttribute(attr, "");
+      parent.appendChild(badge);
+    }
+    add("magg", "magg-badge", "data-magg", "MAGG");
+    add("min", "magg-badge min-badge", "data-min", "MIN");
+    add("maggPari", "magg-badge magg-eq", "data-magg-pari", "MAGG=");
+    add("minPari", "pari-badge", "data-min-pari", "MIN=");
+    add("maggPlus", "magg-badge magg-plus", "data-magg-plus", "MAGG·=");
+    add("minPlus", "pari-badge min-plus", "data-min-plus", "MIN·=");
+    add("pari3", "pari-badge", "data-pari3", "PARI3");
+  }
+
+  function nextCell(line, position) {
+    var next = nextOf(line, position);
+    var td = el("td", { "data-next": "", "data-next-num": String(next.num) });
+    if (!next.sign) {
+      td.textContent = "—";
+      td.setAttribute("data-next-sign", "");
+      return td;
+    }
+    td.setAttribute("data-next-sign", next.sign);
+    td.setAttribute("data-next-kinds", next.kinds.join(" "));
+    var box = el("span", { class: "dopo" });
+    box.appendChild(el("span", { class: "pill s" + next.sign }, next.sign));
+    box.appendChild(el("span", { class: "evo-mini" }, String(next.num)));
+    var badges = el("span", { class: "badges" });
+    appendKindBadges(badges, next.kinds);
+    box.appendChild(badges);
+    td.appendChild(box);
+    return td;
+  }
+
+  function nextArrow(line, position) {
+    var next = nextOf(line, position);
+    var row = el("span", { class: "evo-next", "data-next-sign": next.sign || "" });
+    row.appendChild(el("span", { class: "evo-mini" }, "→"));
+    if (next.sign) row.appendChild(el("span", { class: "pill s" + next.sign }, next.sign));
+    else row.appendChild(el("span", { class: "evo-mini" }, "—"));
+    return row;
+  }
+
   function paintEvo() {
     var picks = document.getElementById("evo-picks");
     clear(picks);
@@ -1688,6 +1766,7 @@
         tr.appendChild(countCell("X", line.X, line));
         tr.appendChild(countCell("2", line["2"], line));
         tr.appendChild(el("td", { class: "forma" }, line.forma));
+        tr.appendChild(nextCell(line, Number(state.evo)));
         body.appendChild(tr);
       });
       return;
@@ -1720,6 +1799,7 @@
           if (!evoShow(line)) td.className = (td.className ? td.className + " " : "") + "evo-dim";
           var box = el("span", { class: "evo-cell" });
           box.appendChild(el("span", { class: "pill s" + line.sign }, line.sign));
+          box.appendChild(nextArrow(line, positionIndex + 1));
           function gridBadge(kind, className, attr, label) {
             if (kinds.indexOf(kind) === -1) return;
             var badge = el("span", { class: className }, label);
